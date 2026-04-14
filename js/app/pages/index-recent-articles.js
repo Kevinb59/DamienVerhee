@@ -72,7 +72,8 @@ async function render() {
     return
   }
   setupRevealOnScroll(mount)
-  setupRevealOnScroll(document.getElementById('index-contact-content'))
+  setupRevealOnScroll(document.getElementById('index-contact-author-card'))
+  setupRevealOnScroll(document.getElementById('index-contact-publisher-card'))
 
   mount.innerHTML = '<p>Chargement…</p>'
 
