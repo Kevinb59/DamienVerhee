@@ -1,0 +1,408 @@
+<!doctype html>
+<!--
+	Damien VERHEE — Site auteur
+-->
+<html>
+  <head>
+    <title>Damien VERHEE | Auteur</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, user-scalable=no"
+    />
+    <link rel="stylesheet" href="assets/css/main.css" />
+    <link rel="stylesheet" href="assets/css/app-data.css" />
+  </head>
+  <body class="is-preload">
+    <!-- Page Wrapper -->
+    <div id="page-wrapper">
+      <!-- Wrapper -->
+      <div class="wrapper">
+        <div class="inner">
+          <!-- Header -->
+          <header id="header">
+            <a href="index.html" class="logo"
+              >Damien VERHEE <span>Auteur</span></a
+            >
+            <nav>
+              <ul>
+                <li><a href="#menu">Menu</a></li>
+              </ul>
+            </nav>
+          </header>
+
+          <!-- Nav : pages du site (auteur) puis entrées du gabarit d’origine en fin de liste -->
+          <nav id="menu">
+            <ul class="links">
+              <li><a href="boutique.html">Boutique</a></li>
+              <li><a href="galerie.html">Galerie</a></li>
+              <li><a href="articles.html">Articles</a></li>
+            </ul>
+          </nav>
+
+          <!-- Banner -->
+          <section id="banner">
+            <div class="items">
+              <!-- Bloc accueil : accès boutique — titre, accroche, CTA vers la page livres -->
+              <section class="accent2">
+                <h1>Boutique</h1>
+                <p>Venez découvrir l'ensemble de mon oeuvre</p>
+                <ul class="actions special">
+                  <li>
+                    <a href="boutique.html" class="button primary"
+                      >Mes livres</a
+                    >
+                  </li>
+                </ul>
+              </section>
+              <!-- Bloc accueil : actualités — titre, accroche, CTA vers les articles -->
+              <section class="accent3">
+                <h1>Fil d'actualités</h1>
+                <p>Tenez-vous informé des dernières nouvelles</p>
+                <ul class="actions special">
+                  <li>
+                    <a href="articles.html" class="button primary"
+                      >Les articles</a
+                    >
+                  </li>
+                </ul>
+              </section>
+            </div>
+            <div class="slider">
+              <article>
+                <img
+                  src="images/pic01.jpg"
+                  alt=""
+                  data-position="bottom right"
+                />
+              </article>
+              <article>
+                <img
+                  src="images/pic02.jpg"
+                  alt=""
+                  data-position="bottom right"
+                />
+              </article>
+              <article>
+                <img src="images/pic03.jpg" alt="" data-position="top left" />
+              </article>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Wrapper -->
+      <div class="wrapper">
+        <div class="inner">
+          <!-- Section : 3 derniers articles (données store / futur Firebase) -->
+          <section class="main" id="index-recent-section">
+            <header class="major">
+              <h2>Derniers articles</h2>
+              <p>Cliquez sur un article pour le lire en entier.</p>
+            </header>
+            <div
+              class="features dv-index-recent dv-reveal-up"
+              id="index-recent-articles"
+            ></div>
+          </section>
+
+          <!-- Diaporama médias (dynamique + fixe) — rempli par js/app/pages/index-media-carousel.js -->
+          <div id="index-media-carousel-root"></div>
+
+          <!-- Section : à propos + calendrier événements / détail (js/app/pages/index-spotlights-section.js) -->
+          <section class="main">
+            <header class="major">
+              <h2>Rencontres &amp; lectures</h2>
+              <p>Salons, dédicaces et événements</p>
+            </header>
+            <!-- Grille 4 zones :
+                 1) haut gauche : à propos (2/3)
+                 2) haut droite : image (1/3)
+                 3) bas gauche : image + calendrier (1/3)
+                 4) bas droite : détail événement (2/3) -->
+            <div class="dv-index-rl-grid dv-reveal-left" id="index-rl-grid">
+              <article class="dv-index-rl__about dv-spotlight-about">
+                <h3>À propos de moi</h3>
+                <p>
+                  Je vis dans le Marais poitevin&nbsp;; je suis né dans le Nord.
+                  Mon univers littéraire est éclectique&nbsp;: thrillers, romans
+                  «&nbsp;feel-good&nbsp;», aventure, espionnage, et surtout deux
+                  romans historiques qui me tiennent à cœur&nbsp;; j’ai aussi
+                  tenté la poésie, par curiosité et par besoin de rythme autre.
+                </p>
+                <p>
+                  Historien de formation, je reviens souvent à la guerre dans
+                  mes textes&nbsp;; je construis mes intrigues sur des recherches
+                  longues, parfois exigeantes. Pour mon dernier roman, au fil de
+                  ces recherches, j’ai échangé avec Ernst Erbl, ancien Waffen-SS,
+                  97&nbsp;ans, chez lui&nbsp;: une rencontre qui pèse et qui
+                  laisse une trace.
+                </p>
+                <p>
+                  Mon 8<sup>e</sup> roman, <em>Le silence de l’océan</em>, est un
+                  livre où je me suis demandé quels éléments, parfois infimes,
+                  nous font croiser une autre personne au point d’en devenir
+                  l’évidence.
+                </p>
+                <p>
+                  J’écris avec l’émotion au premier plan&nbsp;: l’empathie des
+                  personnages, leurs fragilités, une idée d’humanisme et
+                  d’altruisme — ce sont des fils que je tire dans presque tous
+                  mes récits.
+                </p>
+                <p>
+                  Je vais de salon en salon dans la Francophonie&nbsp;; dans la
+                  vie comme dans l’écriture, je me sens un peu pigeon voyageur —
+                  toujours en mouvement pour croiser des histoires et des visages.
+                </p>
+              </article>
+
+              <article class="dv-index-rl__photo-top">
+                <span class="image fit"
+                  ><img src="images/pic08.jpg" alt="" data-position="center"
+                /></span>
+              </article>
+
+              <article class="dv-index-rl__calendar dv-spotlight-calendar-cell">
+                <img src="images/pic07.jpg" alt="" data-position="center" />
+                <div
+                  id="index-event-calendar-root"
+                  class="dv-spotlight-calendar"
+                  aria-label="Calendrier des événements"
+                ></div>
+              </article>
+
+              <article
+                class="dv-index-rl__detail dv-spotlight-event-detail"
+                id="index-event-detail-root"
+              ></article>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Wrapper -->
+      <div class="wrapper">
+        <div class="inner">
+          <!-- Newsletter : résumé hebdomadaire des articles (intégration envoi à prévoir côté serveur / outil tiers). -->
+          <section class="main accent2">
+            <header class="major">
+              <h2>Newsletter</h2>
+              <p>
+                Inscrivez-vous pour recevoir chaque semaine un résumé des
+                articles publiés sur le site.
+              </p>
+            </header>
+            <form
+              method="post"
+              action="#"
+              class="combined"
+              aria-label="Inscription à la newsletter"
+            >
+              <input
+                type="email"
+                name="email"
+                id="newsletter-email"
+                autocomplete="email"
+                placeholder="Votre adresse e-mail"
+                class="invert"
+                required
+                aria-label="Votre adresse e-mail"
+              />
+              <input type="submit" class="primary" value="S’inscrire" />
+            </form>
+          </section>
+
+          <!-- Section contact : bloc blanc en 2 colonnes (auteur / maison d’édition). -->
+          <section class="main dv-index-contact" id="index-contact-section">
+            <header class="major">
+              <h2>Contact</h2>
+              <p>
+                Utilisez le formulaire correspondant à votre demande : auteur ou
+                maison d’édition.
+              </p>
+            </header>
+            <div class="dv-index-contact__grid dv-reveal-right" id="index-contact-content">
+              <!-- Colonne gauche : formulaire contact auteur (nom, email, sujet, message). -->
+              <article class="dv-index-contact__card">
+                <h3>Me contacter</h3>
+                <form
+                  method="post"
+                  action="#"
+                  class="dv-index-contact__form"
+                  aria-label="Formulaire de contact auteur"
+                >
+                  <div class="row gtr-uniform">
+                    <div class="col-6 col-12-xsmall">
+                      <input
+                        type="text"
+                        id="contact-author-name"
+                        name="name"
+                        value=""
+                        placeholder="Nom"
+                      />
+                    </div>
+                    <div class="col-6 col-12-xsmall">
+                      <input
+                        type="email"
+                        id="contact-author-email"
+                        name="email"
+                        value=""
+                        placeholder="Email"
+                      />
+                    </div>
+                    <div class="col-12">
+                      <input
+                        type="text"
+                        id="contact-author-subject"
+                        name="subject"
+                        value=""
+                        placeholder="Sujet"
+                      />
+                    </div>
+                    <div class="col-12">
+                      <textarea
+                        id="contact-author-message"
+                        name="message"
+                        placeholder="Message"
+                        rows="6"
+                      ></textarea>
+                    </div>
+                    <div class="col-12">
+                      <ul class="actions">
+                        <li><input type="submit" value="Envoyer" class="primary" /></li>
+                      </ul>
+                    </div>
+                  </div>
+                </form>
+              </article>
+
+              <!-- Colonne droite : formulaire maison d’édition NomBre7 (mêmes champs). -->
+              <article class="dv-index-contact__card">
+                <h3>Contacter NomBre7 (maison d'édition)</h3>
+                <form
+                  method="post"
+                  action="#"
+                  class="dv-index-contact__form"
+                  aria-label="Formulaire de contact maison d’édition NomBre7"
+                >
+                  <div class="row gtr-uniform">
+                    <div class="col-6 col-12-xsmall">
+                      <input
+                        type="text"
+                        id="contact-publisher-name"
+                        name="publisher-name"
+                        value=""
+                        placeholder="Nom"
+                      />
+                    </div>
+                    <div class="col-6 col-12-xsmall">
+                      <input
+                        type="email"
+                        id="contact-publisher-email"
+                        name="publisher-email"
+                        value=""
+                        placeholder="Email"
+                      />
+                    </div>
+                    <div class="col-12">
+                      <input
+                        type="text"
+                        id="contact-publisher-subject"
+                        name="publisher-subject"
+                        value=""
+                        placeholder="Sujet"
+                      />
+                    </div>
+                    <div class="col-12">
+                      <textarea
+                        id="contact-publisher-message"
+                        name="publisher-message"
+                        placeholder="Message"
+                        rows="6"
+                      ></textarea>
+                    </div>
+                    <div class="col-12">
+                      <ul class="actions">
+                        <li><input type="submit" value="Envoyer à NomBre7" class="primary" /></li>
+                      </ul>
+                    </div>
+                  </div>
+                </form>
+              </article>
+            </div>
+          </section>
+
+          <!-- Footer : coordonnées, liens utiles, copyright. -->
+          <footer id="footer">
+            <section class="links">
+              <div>
+                <h3>Magna</h3>
+                <ul class="plain">
+                  <li><a href="#">Aliquam tempus</a></li>
+                  <li><a href="#">Ultrecies nul</a></li>
+                  <li><a href="#">Gravida ultricies</a></li>
+                  <li><a href="#">Commodo etiam</a></li>
+                </ul>
+              </div>
+              <div>
+                <h3>Feugiat</h3>
+                <ul class="plain">
+                  <li><a href="#">Morbi sem lorem</a></li>
+                  <li><a href="#">Praes sed dapi</a></li>
+                  <li><a href="#">Sed adipis nullam</a></li>
+                  <li><a href="#">Fus dolor lacinia</a></li>
+                </ul>
+              </div>
+              <div>
+                <h3>Tempus</h3>
+                <ul class="plain">
+                  <li><a href="#">Donecnec etiam</a></li>
+                  <li><a href="#">Aapibus sedun</a></li>
+                  <li><a href="#">Namnulla tempus</a></li>
+                  <li><a href="#">Morbi set amet</a></li>
+                </ul>
+              </div>
+              <div>
+                <h3>Aliquam</h3>
+                <ul class="plain">
+                  <li><a href="#">Lorem prasent dia</a></li>
+                  <li><a href="#">Nellentes ipsum</a></li>
+                  <li><a href="#">Diamsed arcu dolor</a></li>
+                  <li><a href="#">Sit amet cursus</a></li>
+                </ul>
+              </div>
+            </section>
+            <ul class="contact-icons">
+              <li class="icon solid fa-home">
+                1 Cité De La Dupe - 79210 Saint-Hilaire-La-Palud
+              </li>
+              <li class="icon solid fa-phone">
+                <a href="tel:+33650838789">06 50 83 87 89</a>
+              </li>
+              <li class="icon solid fa-envelope">
+                <a href="mailto:dverhee74@gmail.com">dverhee74@gmail.com</a>
+              </li>
+            </ul>
+            <p class="copyright">
+              &copy; 2026 Damien VERHEE | Auteur. Tous droits réservés.
+            </p>
+          </footer>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="assets/js/jquery.min.js"></script>
+    <script src="assets/js/browser.min.js"></script>
+    <script src="assets/js/breakpoints.min.js"></script>
+    <script src="assets/js/util.js"></script>
+    <script src="assets/js/main.js"></script>
+    <script type="module" src="js/app/pages/index-recent-articles.js"></script>
+    <script type="module" src="js/app/pages/index-media-carousel.js"></script>
+    <script
+      type="module"
+      src="js/app/pages/index-spotlights-section.js"
+    ></script>
+  </body>
+</html>

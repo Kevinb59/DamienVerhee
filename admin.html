@@ -1,0 +1,285 @@
+<!DOCTYPE HTML>
+<!--
+	Damien VERHEE — Administration (ne pas indexer en production : ajouter auth Firebase + règles Firestore).
+	Bascule Firebase : avant les scripts, définir par exemple :
+	<script>window.__APP_DATA_PROVIDER__ = 'firebase'; window.__FIREBASE_CONFIG__ = { apiKey:'…', authDomain:'…', projectId:'…', storageBucket:'…', messagingSenderId:'…', appId:'…' };</script>
+-->
+<html>
+	<head>
+		<title>Admin — Damien VERHEE</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<meta name="robots" content="noindex,nofollow" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<link rel="stylesheet" href="assets/css/app-data.css" />
+		<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet" />
+	</head>
+	<body class="is-preload dv-admin-body">
+		<div id="page-wrapper">
+			<div class="wrapper">
+				<div class="inner">
+					<header id="header">
+						<a href="index.html" class="logo">Damien VERHEE <span>Admin</span></a>
+						<nav>
+							<ul>
+								<li><a href="index.html">Retour au site</a></li>
+							</ul>
+						</nav>
+					</header>
+				</div>
+			</div>
+
+			<div class="wrapper">
+				<div class="inner">
+					<!-- Bloc 1 : titre pleine largeur ; bloc 2 : grille 3 colonnes (onglets colorés accent2 / accent3 / accent4 du thème). -->
+					<section class="dv-admin__masthead" aria-label="Administration">
+						<div class="dv-admin__masthead-title">
+							<h1>Administration</h1>
+						</div>
+						<div class="dv-admin__masthead-tabs" role="tablist" aria-label="Modules">
+							<button type="button" class="dv-admin__tab dv-admin__tab--articles is-active" data-tab="articles" role="tab" aria-selected="true">Articles</button>
+							<button type="button" class="dv-admin__tab dv-admin__tab--gallery" data-tab="gallery" role="tab" aria-selected="false">Galerie</button>
+							<button type="button" class="dv-admin__tab dv-admin__tab--shop" data-tab="shop" role="tab" aria-selected="false">Boutique</button>
+						</div>
+					</section>
+
+					<section class="main dv-admin">
+						<div id="tab-articles" class="dv-admin__panel is-active" role="tabpanel">
+							<!-- Bloc 1 : formulaire d’édition ; bloc 2 : liste (sélection / nouveau) en dessous. -->
+							<div class="dv-admin__articles-layout">
+								<section class="dv-admin__block dv-admin__block--edit" aria-labelledby="articles-edit-heading">
+									<h2 id="articles-edit-heading" class="dv-admin__panel-title">Édition</h2>
+									<div class="dv-admin__form-column">
+
+									<div class="dv-admin__field">
+										<label for="article-title">Titre</label>
+										<input type="text" id="article-title" placeholder="Titre de l’article" />
+									</div>
+									<div class="dv-admin__field">
+										<label for="article-excerpt">Chapô / extrait</label>
+										<textarea id="article-excerpt" rows="3" placeholder="Résumé affiché dans la liste des articles"></textarea>
+									</div>
+									<div class="dv-admin__field">
+										<label for="article-summary-line">Accroche une ligne (accueil uniquement)</label>
+										<input
+											type="text"
+											id="article-summary-line"
+											maxlength="200"
+											placeholder="Une phrase sous le titre sur l’index — pas sur la page article"
+										/>
+									</div>
+									<div class="dv-admin__divider" aria-hidden="true"></div>
+
+									<!-- Bloc événement : toggle à droite + champs affichés uniquement quand l’article est marqué "événement". -->
+									<div class="dv-admin__section-head">
+										<h3 class="dv-admin__section-label">Événement (calendrier)</h3>
+										<div class="dv-admin__check-inline">
+											<input type="checkbox" id="article-is-event" aria-label="Activer les champs événement" />
+										</div>
+									</div>
+									<div id="article-event-fields" class="dv-admin__event-fields" aria-hidden="true">
+									<!-- Dates/heures alignées sur une seule ligne : début (date+heure) puis fin (date+heure). -->
+									<div class="dv-admin__grid-4">
+										<div class="dv-admin__field">
+											<label for="article-event-date">Date</label>
+											<input type="date" id="article-event-date" />
+										</div>
+										<div class="dv-admin__field">
+											<label for="article-event-time">Heure de début</label>
+											<input type="time" id="article-event-time" />
+										</div>
+										<div class="dv-admin__field">
+											<label for="article-event-end">Fin (date)</label>
+											<input type="date" id="article-event-end" />
+										</div>
+										<div class="dv-admin__field">
+											<label for="article-event-end-time">Heure de fin</label>
+											<input type="time" id="article-event-end-time" />
+										</div>
+									</div>
+									<div class="dv-admin__field">
+										<label for="article-event-loc">Lieu</label>
+										<input type="text" id="article-event-loc" placeholder="Ville, salle…" />
+									</div>
+									</div>
+
+									<div class="dv-admin__divider" aria-hidden="true"></div>
+
+									<h3 class="dv-admin__section-label">Corps de texte</h3>
+									<div class="dv-admin__quill-wrap">
+										<div id="article-editor"></div>
+									</div>
+
+									<h3 class="dv-admin__section-label">Médias supplémentaires (Lien ou fichier)</h3>
+									<div id="extra-media-rows" class="dv-admin__extra-media"></div>
+									<button type="button" class="button small dv-admin__fullwidth" id="btn-add-extra-media">+ Ajouter un média</button>
+
+									<div class="dv-admin__actions">
+										<button type="button" class="button primary" id="btn-save-article">Créer l’article</button>
+									</div>
+									</div>
+								</section>
+
+								<!-- Style aligné sur la section Newsletter (fond accent2, en-tête major, bouton primary) — styles dans app-data.css. -->
+								<section class="dv-admin__articles-list-band" aria-labelledby="articles-list-heading">
+									<header class="major dv-admin__articles-list-head">
+										<h2 id="articles-list-heading">Liste des articles</h2>
+										<p>
+											Cliquez sur «&nbsp;Modifier&nbsp;» pour charger un article dans le formulaire ci-dessus, puis sur «&nbsp;Enregistrer les
+											modifications&nbsp;» pour le sauvegarder. Utilisez «&nbsp;Supprimer&nbsp;» pour l’effacer définitivement (une confirmation
+											sera demandée). Pour un nouvel article, remplissez le formulaire vide et cliquez sur «&nbsp;Créer l’article&nbsp;».
+										</p>
+									</header>
+									<ul id="admin-article-list" class="admin-list dv-admin-list dv-admin-list--articles"></ul>
+								</section>
+							</div>
+						</div>
+
+						<div id="tab-gallery" class="dv-admin__panel" role="tabpanel">
+							<h2 class="dv-admin__panel-title">Galerie</h2>
+
+							<div class="dv-admin__toolbar">
+								<div class="dv-admin__field dv-admin__field--grow">
+									<label for="admin-gallery-album">Album actif</label>
+									<select id="admin-gallery-album"></select>
+								</div>
+								<div class="dv-admin__toolbar-btns">
+									<button type="button" class="button small" id="btn-new-album">Nouvel album</button>
+									<button type="button" class="button small" id="btn-del-album">Supprimer</button>
+								</div>
+							</div>
+
+							<h3 class="dv-admin__section-label">Médias de l’album</h3>
+							<p class="dv-hint">Glisser-déposer pour réordonner.</p>
+							<div id="admin-gallery-items" class="dv-admin__gallery-items"></div>
+
+							<!-- Même logique que les autres onglets : ajout média dans un bandeau couleur dédié sous le bloc principal. -->
+							<section class="dv-admin__gallery-add-band" aria-labelledby="gallery-add-heading">
+								<header class="major dv-admin__gallery-add-head">
+									<h3 id="gallery-add-heading">Ajouter un média</h3>
+									<p>Choisissez un type, puis ajoutez soit un lien soit un fichier local, avec légende optionnelle.</p>
+								</header>
+								<div class="dv-admin__add-media-row">
+									<div class="dv-admin__field">
+										<label for="gitem-source-mode">Source</label>
+										<select id="gitem-source-mode">
+											<option value="url">Lien</option>
+											<option value="file">Fichier</option>
+										</select>
+									</div>
+									<div class="dv-admin__field dv-admin__field--grow" id="gitem-url-wrap">
+										<label for="gitem-url">Lien</label>
+										<input type="url" id="gitem-url" placeholder="URL Média" />
+									</div>
+									<div class="dv-admin__field dv-admin__field--grow" id="gitem-file-wrap" hidden>
+										<label for="gitem-file">Fichier</label>
+										<input type="file" id="gitem-file" accept="image/*,video/*" />
+									</div>
+									<div class="dv-admin__field">
+										<label for="gitem-type">Type</label>
+										<select id="gitem-type">
+											<option value="image">Image</option>
+											<option value="video">Vidéo</option>
+										</select>
+									</div>
+									<div class="dv-admin__field dv-admin__field--grow">
+										<label for="gitem-cap">Légende</label>
+										<input type="text" id="gitem-cap" placeholder="Légende optionnelle" />
+									</div>
+									<div class="dv-admin__field dv-admin__field--action">
+										<span class="dv-admin__fake-label" aria-hidden="true">&nbsp;</span>
+										<button type="button" class="button" id="btn-add-gitem">Ajouter</button>
+									</div>
+								</div>
+							</section>
+						</div>
+
+						<div id="tab-shop" class="dv-admin__panel" role="tabpanel">
+							<!-- Bloc 1 : formulaire produit ; bloc 2 : liste des produits en bandeau couleur (comme les articles). -->
+							<div class="dv-admin__products-layout">
+								<section class="dv-admin__block dv-admin__block--edit" aria-labelledby="products-edit-heading">
+									<div class="dv-admin__form-column">
+									<h2 id="products-edit-heading" class="dv-admin__panel-title">Fiche produit</h2>
+
+									<div class="dv-admin__field">
+										<label for="prod-title">Titre</label>
+										<input type="text" id="prod-title" placeholder="Titre du livre" />
+									</div>
+									<div class="dv-admin__grid-2">
+										<div class="dv-admin__field">
+											<label for="prod-image-mode">Source couverture</label>
+											<select id="prod-image-mode">
+												<option value="url">Lien</option>
+												<option value="file">Fichier</option>
+											</select>
+										</div>
+										<div class="dv-admin__field" id="prod-image-url-wrap">
+											<label for="prod-image">Lien de la couverture</label>
+											<input type="url" id="prod-image" placeholder="URL Média" />
+										</div>
+									</div>
+									<div class="dv-admin__field" id="prod-image-file-wrap" hidden>
+										<label for="prod-image-file">Fichier couverture</label>
+										<input type="file" id="prod-image-file" accept="image/*,video/*" />
+									</div>
+									<div class="dv-admin__field">
+										<label for="prod-synopsis">Synopsis</label>
+										<textarea id="prod-synopsis" rows="4" placeholder="Texte présenté sur la boutique"></textarea>
+									</div>
+									<div class="dv-admin__grid-2">
+										<div class="dv-admin__field">
+											<label for="prod-price">Prix (€)</label>
+											<input type="text" id="prod-price" placeholder="19,90" />
+										</div>
+										<div class="dv-admin__field">
+											<label for="prod-oldprice">Ancien prix (€) si promo</label>
+											<input type="text" id="prod-oldprice" placeholder="24,90" />
+										</div>
+									</div>
+									<div class="dv-admin__field dv-admin__field--check">
+										<input type="checkbox" id="prod-promo" />
+										<label for="prod-promo">En promotion</label>
+									</div>
+									<div class="dv-admin__field">
+										<label for="prod-sumup">Lien SumUp (bouton Acheter)</label>
+										<input type="url" id="prod-sumup" placeholder="https://…" />
+									</div>
+									<div class="dv-admin__field dv-admin__field--check">
+										<input type="checkbox" id="prod-published" checked />
+										<label for="prod-published">Publié</label>
+									</div>
+
+									<div class="dv-admin__actions">
+										<button type="button" class="button primary" id="btn-save-product">Enregistrer le produit</button>
+									</div>
+								</div>
+								</section>
+
+								<!-- Bandeau produits : gestion des livres existants (modifier/supprimer) + création rapide. -->
+								<section class="dv-admin__products-list-band" aria-labelledby="products-list-heading">
+									<header class="major dv-admin__products-list-head">
+										<h2 id="products-list-heading">Produits</h2>
+										<p>Cliquez sur « Modifier » pour charger un livre dans le formulaire ci-dessus, ou sur « Supprimer » pour le retirer.</p>
+									</header>
+									<ul id="admin-product-list" class="admin-list dv-admin-list dv-admin-list--products"></ul>
+									<div class="dv-admin__products-list-cta">
+										<button type="button" class="button primary" id="btn-new-product">Nouveau produit</button>
+									</div>
+								</section>
+							</div>
+						</div>
+					</section>
+				</div>
+			</div>
+		</div>
+
+		<script src="assets/js/jquery.min.js"></script>
+		<script src="assets/js/browser.min.js"></script>
+		<script src="assets/js/breakpoints.min.js"></script>
+		<script src="assets/js/util.js"></script>
+		<script src="assets/js/main.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+		<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+		<script type="module" src="js/app/admin/admin-main.js"></script>
+	</body>
+</html>

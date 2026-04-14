@@ -1,0 +1,958 @@
+/**
+ * Console d’administration : articles (Quill + événements + médias), galerie fixe (glisser-déposer), boutique.
+ * Dépendances globales : Quill, Sortable (chargées dans admin.html avant ce module).
+ */
+import {
+	listArticles,
+	saveArticle,
+	deleteArticle,
+	getArticle,
+	listGalleryAlbums,
+	saveGalleryAlbum,
+	deleteGalleryAlbum,
+	listGalleryItems,
+	saveGalleryItem,
+	deleteGalleryItem,
+	reorderGalleryItems,
+	listProducts,
+	getProduct,
+	saveProduct,
+	deleteProduct,
+	uploadMediaAsset,
+} from '../store.js';
+import { extractMediaFromHtml, mergeArticleMedia } from '../mediaextract.js';
+import { setupQuillMediaResize } from './quill-media-resize.js';
+import { normalizeVideoEmbedUrl } from './video-embed-url.js';
+
+/* global Quill, Sortable */
+
+// ——— Quill : tailles de police et iframe vidéo (YouTube / Vimeo / URL embed) ———
+const BlockEmbed = Quill.import('blots/block/embed');
+const Link = Quill.import('formats/link');
+
+/** Attributs width/height gérés comme le blot vidéo natif Quill (delta + redimensionnement admin). */
+const VIDEO_DIM_ATTRS = ['height', 'width'];
+
+class VideoBlot extends BlockEmbed {
+	static create(value) {
+		const node = super.create(value);
+		const raw = String(value || '').trim();
+		const normalized = normalizeVideoEmbedUrl(raw);
+		const src = normalized || raw;
+		node.setAttribute('src', this.sanitize(src));
+		node.setAttribute('frameborder', '0');
+		node.setAttribute('allowfullscreen', 'true');
+		node.setAttribute(
+			'allow',
+			'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+		);
+		node.setAttribute('width', '560');
+		node.removeAttribute('height');
+		return node;
+	}
+
+	static formats(domNode) {
+		return VIDEO_DIM_ATTRS.reduce((formats, attr) => {
+			if (domNode.hasAttribute(attr)) {
+				formats[attr] = domNode.getAttribute(attr);
+			}
+			return formats;
+		}, {});
+	}
+
+	static value(domNode) {
+		return domNode.getAttribute('src');
+	}
+
+	static sanitize(url) {
+		return Link.sanitize(url) ? url : 'about:blank';
+	}
+
+	format(name, val) {
+		if (VIDEO_DIM_ATTRS.indexOf(name) > -1) {
+			if (val) {
+				this.domNode.setAttribute(name, val);
+			} else {
+				this.domNode.removeAttribute(name);
+			}
+		} else {
+			super.format(name, val);
+		}
+	}
+}
+
+VideoBlot.blotName = 'video';
+VideoBlot.tagName = 'IFRAME';
+VideoBlot.className = 'ql-video';
+Quill.register(VideoBlot, true);
+
+const SizeStyle = Quill.import('attributors/style/size');
+SizeStyle.whitelist = ['10px', '12px', '14px', '16px', '18px', '24px', '32px'];
+Quill.register(SizeStyle, true);
+
+/**
+ * Ouvre un sélecteur de fichier natif et retourne le fichier choisi.
+ *
+ * 1) But : réutiliser la même logique partout (Quill, médias annexes, galerie, produit).
+ * 2) Variables clés :
+ *    - accept : filtre MIME/extensions.
+ *    - file : premier fichier sélectionné.
+ * 3) Flux :
+ *    - création d’un input file temporaire
+ *    - résolution Promise au changement
+ *
+ * @param {string} accept
+ * @returns {Promise<File|null>}
+ */
+function pickFileFromDevice(accept) {
+	return new Promise((resolve) => {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = accept;
+		input.addEventListener('change', () => {
+			resolve(input.files && input.files[0] ? input.files[0] : null);
+		});
+		input.click();
+	});
+}
+
+/**
+ * Upload un fichier via le provider actif et affiche une erreur utilisateur claire si besoin.
+ *
+ * @param {File|null} file
+ * @param {string} folder
+ * @returns {Promise<{ url: string, kind: 'image'|'video' }|null>}
+ */
+async function uploadFileWithFeedback(file, folder) {
+	if (!file) {
+		return null;
+	}
+	try {
+		return await uploadMediaAsset(file, { folder });
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : 'Erreur d’upload.'
+		window.alert(`Upload impossible : ${msg}`)
+		return null
+	}
+}
+
+/**
+ * Affiche un choix explicite "Importer" / "Lien" / "Annuler" pour l’insertion Quill.
+ *
+ * 1) But : éviter les boîtes natives confirm/prompt trop limitées (OK/Annuler).
+ * 2) Variables clés :
+ *    - kindLabel : texte affiché selon le média (image/vidéo).
+ *    - resolveOnce : fermeture unique pour éviter les doubles résolutions.
+ * 3) Flux :
+ *    - création d’un overlay modal léger
+ *    - clic bouton => mode choisi
+ *    - Esc / clic fond => annulation propre
+ *
+ * @param {'image'|'video'} kind
+ * @returns {Promise<'file'|'url'|null>}
+ */
+function askQuillInsertMode(kind) {
+	return new Promise((resolve) => {
+		const kindLabel = kind === 'video' ? 'vidéo' : 'image';
+		const overlay = document.createElement('div');
+		overlay.className = 'dv-admin-dialog';
+		overlay.innerHTML = `
+			<div class="dv-admin-dialog__panel" role="dialog" aria-modal="true" aria-label="Choisir une source ${kindLabel}">
+				<h4>Ajouter une ${kindLabel}</h4>
+				<p>Choisissez la source du média à insérer dans l’éditeur.</p>
+				<div class="dv-admin-dialog__actions">
+					<button type="button" class="button primary" data-choice="file">Importer</button>
+					<button type="button" class="button" data-choice="url">Lien</button>
+					<button type="button" class="button" data-choice="cancel">Annuler</button>
+				</div>
+			</div>
+		`;
+
+		let done = false;
+		const cleanup = () => {
+			document.removeEventListener('keydown', onKeyDown);
+			overlay.remove();
+		};
+		const resolveOnce = (value) => {
+			if (done) {
+				return;
+			}
+			done = true;
+			cleanup();
+			resolve(value);
+		};
+		const onKeyDown = (evt) => {
+			if (evt.key === 'Escape') {
+				resolveOnce(null);
+			}
+		};
+
+		document.addEventListener('keydown', onKeyDown);
+		overlay.addEventListener('click', (evt) => {
+			const btn = evt.target.closest('[data-choice]');
+			if (btn) {
+				const choice = btn.getAttribute('data-choice');
+				resolveOnce(choice === 'file' || choice === 'url' ? choice : null);
+				return;
+			}
+			if (evt.target === overlay) {
+				resolveOnce(null);
+			}
+		});
+
+		document.body.appendChild(overlay);
+		overlay.querySelector('[data-choice="file"]')?.focus();
+	});
+}
+
+/**
+ * Ajoute title + aria-label sur chaque contrôle du toolbar Quill (infobulle au survol).
+ * Cible : .dv-admin__quill-wrap .ql-toolbar (thème Snow 1.3.x).
+ */
+function attachQuillToolbarTooltips() {
+	const toolbar = document.querySelector('.dv-admin__quill-wrap .ql-toolbar');
+	if (!toolbar) {
+		return;
+	}
+
+	function setTip(el, text) {
+		if (!el || !text) {
+			return;
+		}
+		el.setAttribute('title', text);
+		el.setAttribute('aria-label', text);
+	}
+
+	// Boutons directs (formats simples, listes, alignement, lien, médias, nettoyage).
+	toolbar.querySelectorAll('button').forEach((btn) => {
+		if (btn.classList.contains('ql-bold')) {
+			setTip(btn, 'Gras');
+			return;
+		}
+		if (btn.classList.contains('ql-italic')) {
+			setTip(btn, 'Italique');
+			return;
+		}
+		if (btn.classList.contains('ql-underline')) {
+			setTip(btn, 'Souligné');
+			return;
+		}
+		if (btn.classList.contains('ql-strike')) {
+			setTip(btn, 'Barré');
+			return;
+		}
+		if (btn.classList.contains('ql-blockquote')) {
+			setTip(btn, 'Citation');
+			return;
+		}
+		if (btn.classList.contains('ql-code-block')) {
+			setTip(btn, 'Bloc de code');
+			return;
+		}
+		if (btn.classList.contains('ql-link')) {
+			setTip(btn, 'Insérer ou modifier un lien');
+			return;
+		}
+		if (btn.classList.contains('ql-image')) {
+			setTip(btn, 'Insérer une image (Importer ou Lien)');
+			return;
+		}
+		if (btn.classList.contains('ql-video')) {
+			setTip(btn, 'Insérer une vidéo (Importer ou Lien)');
+			return;
+		}
+		if (btn.classList.contains('ql-clean')) {
+			setTip(btn, 'Retirer tout le formatage sur la sélection');
+			return;
+		}
+		if (btn.classList.contains('ql-list')) {
+			const v = btn.getAttribute('value') || '';
+			setTip(btn, v === 'ordered' ? 'Liste numérotée' : 'Liste à puces');
+			return;
+		}
+		if (btn.classList.contains('ql-align')) {
+			const v = btn.getAttribute('value') || '';
+			const alignTips = {
+				'': 'Aligner à gauche',
+				center: 'Centrer le texte',
+				right: 'Aligner à droite',
+				justify: 'Justifier',
+			};
+			setTip(btn, alignTips[v] ?? 'Alignement');
+			return;
+		}
+		if (btn.classList.contains('ql-indent')) {
+			const v = btn.getAttribute('value') || '';
+			setTip(btn, v === '-1' ? 'Diminuer le retrait' : 'Augmenter le retrait');
+			return;
+		}
+	});
+
+	// Menus déroulants : libellé sur la poignée + chaque option du panneau.
+	toolbar.querySelectorAll('.ql-picker').forEach((picker) => {
+		const label = picker.querySelector('.ql-picker-label');
+		if (!label) {
+			return;
+		}
+
+		if (picker.classList.contains('ql-header')) {
+			setTip(label, 'Niveau de titre ou paragraphe normal');
+			picker.querySelectorAll('.ql-picker-item').forEach((item) => {
+				const v = item.getAttribute('data-value');
+				if (v === '1') {
+					setTip(item, 'Titre principal (très grand)');
+				} else if (v === '2') {
+					setTip(item, 'Titre de section');
+				} else if (v === '3') {
+					setTip(item, 'Sous-titre');
+				} else {
+					setTip(item, 'Paragraphe normal (sans titre)');
+				}
+			});
+			return;
+		}
+
+		if (picker.classList.contains('ql-size')) {
+			setTip(label, 'Taille de police');
+			picker.querySelectorAll('.ql-picker-item').forEach((item) => {
+				const v = item.getAttribute('data-value');
+				setTip(item, v ? `Taille ${v}` : 'Taille par défaut');
+			});
+			return;
+		}
+
+		if (picker.classList.contains('ql-color')) {
+			setTip(label, 'Couleur du texte');
+			picker.querySelectorAll('.ql-picker-item').forEach((item) => {
+				const v = item.getAttribute('data-value');
+				setTip(item, !v || v === 'false' ? 'Couleur par défaut' : `Texte ${v}`);
+			});
+			return;
+		}
+
+		if (picker.classList.contains('ql-background')) {
+			setTip(label, 'Couleur de surlignage (fond)');
+			picker.querySelectorAll('.ql-picker-item').forEach((item) => {
+				const v = item.getAttribute('data-value');
+				setTip(item, !v || v === 'false' ? 'Aucun surlignage' : `Fond ${v}`);
+			});
+			return;
+		}
+
+		// Snow : alignement = icônes dans un .ql-picker (pas des boutons ql-align séparés).
+		if (picker.classList.contains('ql-align')) {
+			setTip(label, 'Alignement du paragraphe');
+			picker.querySelectorAll('.ql-picker-item').forEach((item) => {
+				const v = item.getAttribute('data-value') || '';
+				const alignItemTips = {
+					'': 'Aligner à gauche',
+					center: 'Centrer le texte',
+					right: 'Aligner à droite',
+					justify: 'Justifier',
+				};
+				setTip(item, alignItemTips[v] ?? 'Alignement');
+			});
+		}
+	});
+}
+
+const quill = new Quill('#article-editor', {
+	theme: 'snow',
+	modules: {
+		toolbar: {
+			container: [
+				[{ header: [1, 2, 3, false] }],
+				[{ size: SizeStyle.whitelist }],
+				['bold', 'italic', 'underline', 'strike'],
+				[{ color: [] }, { background: [] }],
+				[{ align: [] }],
+				[{ list: 'ordered' }, { list: 'bullet' }],
+				['blockquote', 'code-block'],
+				['link', 'image', 'video'],
+				['clean'],
+			],
+			handlers: {
+				async image() {
+					const mode = await askQuillInsertMode('image');
+					if (!mode) {
+						return;
+					}
+					let imageUrl = '';
+					if (mode === 'file') {
+						const file = await pickFileFromDevice('image/*');
+						const uploaded = await uploadFileWithFeedback(file, 'articles/editor/images');
+						imageUrl = uploaded?.url || '';
+					} else {
+						imageUrl = String(window.prompt('Collez le lien de l’image :') || '').trim();
+					}
+					if (!imageUrl) {
+						return;
+					}
+					const range = quill.getSelection(true);
+					quill.insertEmbed(range.index, 'image', imageUrl);
+				},
+				async video() {
+					const mode = await askQuillInsertMode('video');
+					if (!mode) {
+						return;
+					}
+					let videoUrl = '';
+					if (mode === 'file') {
+						const file = await pickFileFromDevice('video/*');
+						const uploaded = await uploadFileWithFeedback(file, 'articles/editor/videos');
+						videoUrl = uploaded?.url || '';
+					} else {
+						videoUrl = String(
+							window.prompt(
+								'Collez une URL YouTube/Vimeo (page ou partage), une URL d’embed, ou un lien vidéo direct :'
+							) || ''
+						).trim();
+					}
+					if (!videoUrl) {
+						return;
+					}
+					const range = quill.getSelection(true);
+					quill.insertEmbed(range.index, 'video', videoUrl);
+				},
+			},
+		},
+	},
+});
+
+attachQuillToolbarTooltips();
+setupQuillMediaResize(quill);
+
+/**
+ * Charge du HTML dans Quill via le convertisseur officiel (delta) pour garder les blots cohérents
+ * — nécessaire notamment pour le redimensionnement des images (attribut width).
+ * @param {string} [html]
+ */
+function quillSetHtmlFromString(html) {
+	const raw = html && String(html).trim() ? String(html) : '<p><br></p>';
+	try {
+		quill.setContents(quill.clipboard.convert(raw), 'silent');
+	} catch {
+		quill.root.innerHTML = raw;
+	}
+}
+
+let editingArticleId = null;
+
+/**
+ * Libellé du bouton principal : création vs édition d’un article existant.
+ * Variable clé : editingArticleId (null → « Créer l’article », sinon → « Enregistrer les modifications »).
+ */
+function updateArticleSaveButtonLabel() {
+	const btn = document.getElementById('btn-save-article');
+	if (!btn) {
+		return;
+	}
+	btn.textContent = editingArticleId ? 'Enregistrer les modifications' : 'Créer l’article';
+}
+
+/**
+ * Affiche/masque le bloc de champs événement selon la case "article-is-event".
+ * But : garder le formulaire lisible et éviter de saisir des infos événement quand la case est décochée.
+ */
+function syncEventFieldsVisibility() {
+	const isEvent = document.getElementById('article-is-event')?.checked;
+	const wrap = document.getElementById('article-event-fields');
+	if (!wrap) {
+		return;
+	}
+	if (isEvent) {
+		wrap.classList.add('is-open');
+		wrap.setAttribute('aria-hidden', 'false');
+	} else {
+		wrap.classList.remove('is-open');
+		wrap.setAttribute('aria-hidden', 'true');
+	}
+}
+
+// ——— Onglets admin (boutons dans .dv-admin__masthead-tabs) ———
+// But : synchroniser les classes/ARIA des boutons avec l’affichage des panneaux #tab-*.
+// Clé : data-tab → id du panneau tab-${tab} ; rafraîchissement des listes à l’ouverture de chaque module.
+document.querySelectorAll('.dv-admin__masthead-tabs button').forEach((btn) => {
+	btn.addEventListener('click', () => {
+		const tab = btn.dataset.tab;
+		document.querySelectorAll('.dv-admin__masthead-tabs button').forEach((b) => {
+			b.classList.remove('is-active');
+			b.setAttribute('aria-selected', 'false');
+		});
+		document.querySelectorAll('.dv-admin__panel').forEach((p) => p.classList.remove('is-active'));
+		btn.classList.add('is-active');
+		btn.setAttribute('aria-selected', 'true');
+		document.getElementById(`tab-${tab}`)?.classList.add('is-active');
+		if (tab === 'articles') {
+			refreshArticleList();
+		}
+		if (tab === 'gallery') {
+			refreshGalleryAdmin();
+		}
+		if (tab === 'shop') {
+			refreshProductList();
+		}
+	});
+});
+
+// ——— Articles : liste / formulaire ———
+async function refreshArticleList() {
+	const ul = document.getElementById('admin-article-list');
+	if (!ul) {
+		return;
+	}
+	ul.innerHTML = '';
+	const items = await listArticles({ publishedOnly: false });
+	for (const a of items) {
+		const li = document.createElement('li');
+		li.innerHTML = `<span>${a.title}</span><span>
+			<button type="button" class="button small" data-edit-article="${a.id}">Modifier</button>
+			<button type="button" class="button small" data-del-article="${a.id}">Supprimer</button>
+		</span>`;
+		ul.appendChild(li);
+	}
+}
+
+function resetArticleForm() {
+	editingArticleId = null;
+	document.getElementById('article-title').value = '';
+	document.getElementById('article-excerpt').value = '';
+	document.getElementById('article-summary-line').value = '';
+	document.getElementById('article-is-event').checked = false;
+	document.getElementById('article-event-date').value = '';
+	document.getElementById('article-event-time').value = '';
+	document.getElementById('article-event-end').value = '';
+	document.getElementById('article-event-end-time').value = '';
+	document.getElementById('article-event-loc').value = '';
+	quillSetHtmlFromString('');
+	document.getElementById('extra-media-rows').innerHTML = '';
+	syncEventFieldsVisibility();
+	updateArticleSaveButtonLabel();
+}
+
+/**
+ * Synchronise l’affichage d’une ligne média selon la source choisie (lien ou fichier).
+ *
+ * @param {HTMLElement} row
+ */
+function syncExtraMediaRowSource(row) {
+	const mode = row.querySelector('.extra-source-mode')?.value || 'url';
+	const urlWrap = row.querySelector('.extra-url-wrap');
+	const fileWrap = row.querySelector('.extra-file-wrap');
+	if (urlWrap) {
+		urlWrap.hidden = mode !== 'url';
+	}
+	if (fileWrap) {
+		fileWrap.hidden = mode !== 'file';
+	}
+}
+
+function addExtraMediaRow(url = '', type = 'image', caption = '') {
+	const wrap = document.getElementById('extra-media-rows');
+	const row = document.createElement('div');
+	row.className = 'dv-admin__extra-row';
+	row.innerHTML = `
+		<select class="extra-source-mode" aria-label="Source du média">
+			<option value="url">Lien</option>
+			<option value="file">Fichier</option>
+		</select>
+		<div class="extra-url-wrap">
+			<input type="url" placeholder="URL média" class="extra-url" value="${url.replace(/"/g, '&quot;')}" />
+		</div>
+		<div class="extra-file-wrap" hidden>
+			<input type="file" class="extra-file" accept="image/*,video/*" />
+		</div>
+		<select class="extra-type" aria-label="Type de média"><option value="image">Image</option><option value="video" ${type === 'video' ? 'selected' : ''}>Vidéo</option></select>
+		<input type="text" placeholder="Légende" class="extra-cap" value="${caption.replace(/"/g, '&quot;')}" />
+		<button type="button" class="button small extra-rm" aria-label="Supprimer le média">Supprimer le média</button>
+	`;
+	row.querySelector('.extra-source-mode')?.addEventListener('change', () => {
+		syncExtraMediaRowSource(row);
+	});
+	row.querySelector('.extra-rm').onclick = () => row.remove();
+	syncExtraMediaRowSource(row);
+	wrap.appendChild(row);
+}
+
+document.getElementById('btn-add-extra-media')?.addEventListener('click', () => addExtraMediaRow());
+document.getElementById('article-is-event')?.addEventListener('change', syncEventFieldsVisibility);
+
+document.getElementById('admin-article-list')?.addEventListener('click', async (e) => {
+	const edit = e.target.closest('[data-edit-article]');
+	const del = e.target.closest('[data-del-article]');
+	if (edit) {
+		const art = await getArticle(edit.dataset.editArticle);
+		if (!art) {
+			return;
+		}
+		editingArticleId = art.id;
+		document.getElementById('article-title').value = art.title;
+		document.getElementById('article-excerpt').value = art.excerpt || '';
+		document.getElementById('article-summary-line').value = art.summaryLine || '';
+		document.getElementById('article-is-event').checked = !!art.isEvent;
+		document.getElementById('article-event-date').value = art.eventDate || '';
+		document.getElementById('article-event-time').value = art.eventTime || '';
+		document.getElementById('article-event-end').value = art.eventEndDate || '';
+		document.getElementById('article-event-end-time').value = art.eventEndTime || '';
+		document.getElementById('article-event-loc').value = art.eventLocation || '';
+		quillSetHtmlFromString(art.bodyHtml || '');
+		document.getElementById('extra-media-rows').innerHTML = '';
+		// Médias « manuels » : ceux qui ne sont pas détectés dans le HTML (approximation : on reprend la liste enregistrée)
+		(art.media || []).forEach((m) => addExtraMediaRow(m.url, m.type, m.caption || ''));
+		syncEventFieldsVisibility();
+		updateArticleSaveButtonLabel();
+		return;
+	}
+	// Suppression : message explicite + titre dans la boîte pour limiter les clics accidentels.
+	if (del) {
+		const id = del.dataset.delArticle;
+		const titleEl = del.closest('li')?.querySelector('span:first-child');
+		const title = titleEl?.textContent?.trim() || 'cet article';
+		const ok = window.confirm(
+			`Vous allez supprimer définitivement l’article « ${title} ».\n\nCette action est irréversible. Cliquez sur OK pour confirmer la suppression.`,
+		);
+		if (!ok) {
+			return;
+		}
+		await deleteArticle(id);
+		if (editingArticleId === id) {
+			resetArticleForm();
+		}
+		await refreshArticleList();
+	}
+});
+
+document.getElementById('btn-save-article')?.addEventListener('click', async () => {
+	const title = document.getElementById('article-title').value.trim();
+	const bodyHtml = quill.root.innerHTML;
+	const fromEditor = [];
+
+	// 1) Médias annexes : chaque ligne peut venir d’un lien ou d’un fichier.
+	// 2) Si fichier => upload immédiat via provider actif pour obtenir l’URL finale à stocker.
+	const rows = Array.from(document.querySelectorAll('#extra-media-rows .dv-admin__extra-row'));
+	for (const row of rows) {
+		const mode = row.querySelector('.extra-source-mode')?.value || 'url';
+		let url = '';
+		if (mode === 'file') {
+			const file = row.querySelector('.extra-file')?.files?.[0] || null;
+			const uploaded = await uploadFileWithFeedback(file, 'articles/extra-media');
+			url = uploaded?.url || '';
+		} else {
+			url = row.querySelector('.extra-url')?.value.trim() || '';
+		}
+		if (!url) {
+			continue;
+		}
+		fromEditor.push({
+			url,
+			type: row.querySelector('.extra-type')?.value || 'image',
+			caption: row.querySelector('.extra-cap')?.value.trim() || '',
+		});
+	}
+	const merged = mergeArticleMedia(fromEditor, extractMediaFromHtml(bodyHtml));
+	const isEvent = document.getElementById('article-is-event').checked;
+
+	// Bloc événement : si la case est décochée, on force les champs à null/'' pour éviter des résidus cachés.
+	const payload = {
+		id: editingArticleId || undefined,
+		title,
+		excerpt: document.getElementById('article-excerpt').value.trim(),
+		summaryLine: document.getElementById('article-summary-line').value.trim(),
+		bodyHtml,
+		// En admin, les articles créés/édités via ce formulaire sont publiés directement.
+		published: true,
+		isEvent,
+		eventDate: isEvent ? document.getElementById('article-event-date').value || null : null,
+		eventTime: isEvent ? document.getElementById('article-event-time').value || null : null,
+		eventEndDate: isEvent ? document.getElementById('article-event-end').value || null : null,
+		eventEndTime: isEvent ? document.getElementById('article-event-end-time').value || null : null,
+		eventLocation: isEvent ? document.getElementById('article-event-loc').value.trim() : '',
+		media: merged,
+	};
+
+	const wasNew = !editingArticleId;
+	await saveArticle(payload);
+	await refreshArticleList();
+	if (wasNew) {
+		resetArticleForm();
+	} else {
+		updateArticleSaveButtonLabel();
+	}
+	window.alert(
+		wasNew
+			? 'Article créé (mémoire session — rechargement = données seed ; Firebase pour la persistance).'
+			: 'Modifications enregistrées (mémoire session — rechargement = données seed ; Firebase pour la persistance).',
+	);
+});
+
+// ——— Galerie fixe : albums + tri ———
+let galleryAlbumId = null;
+
+async function refreshGalleryAdmin() {
+	const albumSel = document.getElementById('admin-gallery-album');
+	const listEl = document.getElementById('admin-gallery-items');
+	if (!albumSel || !listEl) {
+		return;
+	}
+	const albums = await listGalleryAlbums();
+	albumSel.innerHTML = '';
+	for (const a of albums) {
+		const o = document.createElement('option');
+		o.value = a.id;
+		o.textContent = a.title;
+		albumSel.appendChild(o);
+	}
+	if (albums.length) {
+		galleryAlbumId = albums[0].id;
+		albumSel.value = galleryAlbumId;
+		await renderGalleryItemsList();
+	} else {
+		listEl.innerHTML = '<p class="dv-admin__empty-msg">Créez un album ci-dessous.</p>';
+	}
+}
+
+async function renderGalleryItemsList() {
+	const listEl = document.getElementById('admin-gallery-items');
+	if (!galleryAlbumId) {
+		return;
+	}
+	const items = await listGalleryItems(galleryAlbumId);
+	listEl.innerHTML = '';
+	const ul = document.createElement('ul');
+	ul.id = 'sort-gallery-items';
+	ul.className = 'dv-admin__sortable-list';
+	items.forEach((it) => {
+		const li = document.createElement('li');
+		li.dataset.id = it.id;
+		const shortUrl = it.url.length > 52 ? `${it.url.slice(0, 52)}…` : it.url;
+		li.innerHTML = `<span class="dv-admin__gitem-label">${it.type} — ${shortUrl}</span>
+			<button type="button" class="button small" data-del-gitem="${it.id}">Supprimer</button>`;
+		ul.appendChild(li);
+	});
+	listEl.appendChild(ul);
+
+	if (typeof Sortable !== 'undefined') {
+		if (ul._dvSortable) {
+			ul._dvSortable.destroy();
+		}
+		ul._dvSortable = Sortable.create(ul, {
+			animation: 150,
+			ghostClass: 'dv-sortable-ghost',
+			onEnd: async () => {
+				const ids = Array.from(ul.children).map((child) => child.dataset.id);
+				await reorderGalleryItems(galleryAlbumId, ids);
+			},
+		});
+	}
+
+	ul.addEventListener('click', async (e) => {
+		const b = e.target.closest('[data-del-gitem]');
+		if (b) {
+			await deleteGalleryItem(b.dataset.delGitem);
+			await renderGalleryItemsList();
+		}
+	});
+}
+
+document.getElementById('admin-gallery-album')?.addEventListener('change', async (e) => {
+	galleryAlbumId = e.target.value;
+	await renderGalleryItemsList();
+});
+
+document.getElementById('btn-new-album')?.addEventListener('click', async () => {
+	const title = window.prompt('Nom du nouvel album');
+	if (title) {
+		await saveGalleryAlbum({ title });
+		await refreshGalleryAdmin();
+	}
+});
+
+document.getElementById('btn-del-album')?.addEventListener('click', async () => {
+	if (!galleryAlbumId || !window.confirm('Supprimer cet album et son contenu ?')) {
+		return;
+	}
+	await deleteGalleryAlbum(galleryAlbumId);
+	await refreshGalleryAdmin();
+});
+
+/**
+ * Bascule champ Lien/Fichier pour l’ajout de média galerie.
+ */
+function syncGallerySourceMode() {
+	const mode = document.getElementById('gitem-source-mode')?.value || 'url';
+	const urlWrap = document.getElementById('gitem-url-wrap');
+	const fileWrap = document.getElementById('gitem-file-wrap');
+	if (urlWrap) {
+		urlWrap.hidden = mode !== 'url';
+	}
+	if (fileWrap) {
+		fileWrap.hidden = mode !== 'file';
+	}
+}
+
+document.getElementById('gitem-source-mode')?.addEventListener('change', syncGallerySourceMode);
+
+document.getElementById('btn-add-gitem')?.addEventListener('click', async () => {
+	if (!galleryAlbumId) {
+		window.alert('Choisissez ou créez un album.');
+		return;
+	}
+
+	// 1) Source galerie : lien direct OU fichier local.
+	const sourceMode = document.getElementById('gitem-source-mode')?.value || 'url';
+	let url = '';
+	if (sourceMode === 'file') {
+		const file = document.getElementById('gitem-file')?.files?.[0] || null;
+		const uploaded = await uploadFileWithFeedback(file, 'gallery/fixed');
+		url = uploaded?.url || '';
+	} else {
+		url = document.getElementById('gitem-url').value.trim();
+	}
+	if (!url) {
+		return;
+	}
+	const type = document.getElementById('gitem-type').value;
+	await saveGalleryItem({
+		albumId: galleryAlbumId,
+		url,
+		type,
+		thumbUrl: url,
+		caption: document.getElementById('gitem-cap').value.trim(),
+	});
+	document.getElementById('gitem-url').value = '';
+	const gitemFile = document.getElementById('gitem-file');
+	if (gitemFile) {
+		gitemFile.value = '';
+	}
+	await renderGalleryItemsList();
+});
+
+// ——— Boutique ———
+let editingProductId = null;
+
+async function refreshProductList() {
+	const ul = document.getElementById('admin-product-list');
+	if (!ul) {
+		return;
+	}
+	ul.innerHTML = '';
+	const items = await listProducts({ publishedOnly: false });
+	for (const p of items) {
+		const li = document.createElement('li');
+		li.innerHTML = `<span>${p.title}</span><span>
+			<button type="button" class="button small" data-edit-product="${p.id}">Modifier</button>
+			<button type="button" class="button small" data-del-product="${p.id}">Supprimer</button>
+		</span>`;
+		ul.appendChild(li);
+	}
+}
+
+function eurosToCents(str) {
+	const n = parseFloat(String(str).replace(',', '.'));
+	if (Number.isNaN(n)) {
+		return 0;
+	}
+	return Math.round(n * 100);
+}
+
+/**
+ * Bascule champ Lien/Fichier pour la couverture produit.
+ */
+function syncProductImageSourceMode() {
+	const mode = document.getElementById('prod-image-mode')?.value || 'url';
+	const urlWrap = document.getElementById('prod-image-url-wrap');
+	const fileWrap = document.getElementById('prod-image-file-wrap');
+	if (urlWrap) {
+		urlWrap.hidden = mode !== 'url';
+	}
+	if (fileWrap) {
+		fileWrap.hidden = mode !== 'file';
+	}
+}
+
+document.getElementById('prod-image-mode')?.addEventListener('change', syncProductImageSourceMode);
+
+document.getElementById('admin-product-list')?.addEventListener('click', async (e) => {
+	const edit = e.target.closest('[data-edit-product]');
+	const del = e.target.closest('[data-del-product]');
+	if (edit) {
+		const p = await getProduct(edit.dataset.editProduct);
+		if (!p) {
+			return;
+		}
+		editingProductId = p.id;
+		document.getElementById('prod-title').value = p.title;
+		document.getElementById('prod-image-mode').value = 'url';
+		document.getElementById('prod-image').value = p.imageUrl;
+		const imgFile = document.getElementById('prod-image-file');
+		if (imgFile) {
+			imgFile.value = '';
+		}
+		document.getElementById('prod-synopsis').value = p.synopsis;
+		document.getElementById('prod-price').value = (p.priceCents / 100).toFixed(2);
+		document.getElementById('prod-promo').checked = !!p.promo;
+		document.getElementById('prod-oldprice').value =
+			p.priceBeforePromoCents != null ? (p.priceBeforePromoCents / 100).toFixed(2) : '';
+		document.getElementById('prod-sumup').value = p.sumupUrl;
+		document.getElementById('prod-published').checked = !!p.published;
+		syncProductImageSourceMode();
+		return;
+	}
+	if (del && window.confirm('Supprimer ce produit ?')) {
+		await deleteProduct(del.dataset.delProduct);
+		refreshProductList();
+	}
+});
+
+document.getElementById('btn-new-product')?.addEventListener('click', () => {
+	editingProductId = null;
+	document.getElementById('prod-title').value = '';
+	document.getElementById('prod-image-mode').value = 'url';
+	document.getElementById('prod-image').value = '';
+	const imgFile = document.getElementById('prod-image-file');
+	if (imgFile) {
+		imgFile.value = '';
+	}
+	document.getElementById('prod-synopsis').value = '';
+	document.getElementById('prod-price').value = '';
+	document.getElementById('prod-promo').checked = false;
+	document.getElementById('prod-oldprice').value = '';
+	document.getElementById('prod-sumup').value = '';
+	document.getElementById('prod-published').checked = true;
+	syncProductImageSourceMode();
+});
+
+document.getElementById('btn-save-product')?.addEventListener('click', async () => {
+	const promo = document.getElementById('prod-promo').checked;
+	const imageMode = document.getElementById('prod-image-mode')?.value || 'url';
+	let imageUrl = '';
+	if (imageMode === 'file') {
+		const file = document.getElementById('prod-image-file')?.files?.[0] || null;
+		const uploaded = await uploadFileWithFeedback(file, 'products/covers');
+		imageUrl = uploaded?.url || document.getElementById('prod-image').value.trim();
+	} else {
+		imageUrl = document.getElementById('prod-image').value.trim();
+	}
+	const payload = {
+		id: editingProductId || undefined,
+		title: document.getElementById('prod-title').value.trim(),
+		imageUrl,
+		synopsis: document.getElementById('prod-synopsis').value.trim(),
+		priceCents: eurosToCents(document.getElementById('prod-price').value),
+		promo,
+		priceBeforePromoCents: promo ? eurosToCents(document.getElementById('prod-oldprice').value) : null,
+		sumupUrl: document.getElementById('prod-sumup').value.trim() || '#',
+		published: document.getElementById('prod-published').checked,
+		currency: 'EUR',
+	};
+	await saveProduct(payload);
+	await refreshProductList();
+	window.alert('Produit enregistré.');
+});
+
+// Chargement initial : onglet articles
+updateArticleSaveButtonLabel();
+syncEventFieldsVisibility();
+syncGallerySourceMode();
+syncProductImageSourceMode();
+refreshArticleList();

@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "public": true,
+  "headers": [
+    {
+      "source": "/js/app/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, must-revalidate"
+        }
+      ]
+    }
+  ]
+}
