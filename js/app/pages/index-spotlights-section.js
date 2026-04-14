@@ -4,7 +4,8 @@
 import { listEventArticles } from '../store.js'
 
 /** Texte affiché lorsqu’aucun jour à événement n’est sélectionné (ou jour sans événement). */
-const HINT_EMPTY = 'Cliquez sur un événement pour en savoir plus.'
+const HINT_EMPTY =
+  'Cliquez sur un événement sur le calendrier pour en savoir plus.'
 
 /**
  * Échappe du texte pour insertion dans du HTML.
@@ -102,7 +103,10 @@ function renderEventDetail(article) {
     // 2) Variable clé : classe CSS `is-empty` sur le conteneur racine.
     // 3) Flux : la consigne reste lisible même quand aucune date n’est sélectionnée.
     root.classList.add('is-empty')
-    root.innerHTML = `<p class="dv-event-detail__hint">${esc(HINT_EMPTY)}</p>`
+    // 1) But : mettre en évidence le mot "événement" pour rappeler les jours marqués du calendrier.
+    // 2) Variable clé : span dédié stylé en pastille verte via CSS.
+    // 3) Flux : le message reste textuel mais offre un repère visuel immédiat.
+    root.innerHTML = `<p class="dv-event-detail__hint">Cliquez sur un <span class="dv-event-detail__hint-event">événement</span> sur le calendrier pour en savoir plus.</p>`
     return
   }
   root.classList.remove('is-empty')
