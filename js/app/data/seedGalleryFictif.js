@@ -100,14 +100,24 @@ const ITEMS = [
     addedAt: '2025-03-03T10:00:00.000Z'
   },
   {
+    id: 'seed_gi_humour_einstein',
+    albumId: 'seed_album_humour',
+    type: 'image',
+    url: imageUrl('humour', 'einstein.png'),
+    thumbUrl: imageUrl('humour', 'einstein.png'),
+    caption: 'Humour — pastiche (maquette).',
+    sortOrder: 1,
+    addedAt: '2025-03-03T10:01:00.000Z'
+  },
+  {
     id: 'seed_gi_humour_goldman',
     albumId: 'seed_album_humour',
     type: 'image',
     url: imageUrl('humour', 'goldman.png'),
     thumbUrl: imageUrl('humour', 'goldman.png'),
     caption: 'Humour — pastiche (maquette).',
-    sortOrder: 1,
-    addedAt: '2025-03-03T10:01:00.000Z'
+    sortOrder: 2,
+    addedAt: '2025-03-03T10:02:00.000Z'
   },
   {
     id: 'seed_gi_humour_graig',
@@ -116,8 +126,8 @@ const ITEMS = [
     url: imageUrl('humour', 'graig.png'),
     thumbUrl: imageUrl('humour', 'graig.png'),
     caption: 'Humour — pastiche (maquette).',
-    sortOrder: 2,
-    addedAt: '2025-03-03T10:02:00.000Z'
+    sortOrder: 3,
+    addedAt: '2025-03-03T10:03:00.000Z'
   },
   {
     id: 'seed_gi_humour_musk',
@@ -126,8 +136,8 @@ const ITEMS = [
     url: imageUrl('humour', 'musk.png'),
     thumbUrl: imageUrl('humour', 'musk.png'),
     caption: 'Humour — pastiche (maquette).',
-    sortOrder: 3,
-    addedAt: '2025-03-03T10:03:00.000Z'
+    sortOrder: 4,
+    addedAt: '2025-03-03T10:04:00.000Z'
   }
 ]
 
