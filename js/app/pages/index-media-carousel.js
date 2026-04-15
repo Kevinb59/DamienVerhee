@@ -205,7 +205,7 @@ function runCarousel(section, dotsRoot) {
   /**
    * Ajuste la largeur + hauteur du viewport à la slide active.
    * Objectif : éviter les "marges blanches" latérales quand le média actif est plus étroit,
-   * tout en gardant la limite max (500px) définie en CSS.
+   * tout en gardant la limite max (750px) définie en CSS.
    */
   function updateViewportBox() {
     const active = slides[pos]
@@ -213,22 +213,66 @@ function runCarousel(section, dotsRoot) {
       return
     }
     const imageBox = active.querySelector('.image')
-    // Largeur active = largeur réelle du média affiché (fallback: largeur viewport courante).
-    let w =
-      imageBox && imageBox instanceof HTMLElement
-        ? imageBox.offsetWidth
-        : viewport.getBoundingClientRect().width
-    if (w < 4) {
-      const sectionW = section.getBoundingClientRect().width
-      w = Math.min(500, sectionW)
-    }
-    viewport.style.width = `${Math.ceil(w)}px`
+    /**
+     * 1) But : dimensionner le viewport à partir du format natif du média actif.
+     * 2) Variables clés :
+     *    - maxW/maxH : bornes visuelles (750) + largeur disponible de la section.
+     *    - natW/natH : dimensions natives img/video quand disponibles.
+     *    - scale : coefficient de réduction pour rester dans les bornes sans déformer.
+     * 3) Flux :
+     *    - lire les dimensions natives si possible
+     *    - calculer une boîte cible bornée (max 750x750)
+     *    - fallback sur la taille rendue courante si dimensions natives absentes.
+     */
+    const sectionW = section.getBoundingClientRect().width
+    const maxW = Math.min(750, sectionW)
+    const maxH = 750
 
-    let h = active.offsetHeight
-    if (h < 4) {
-      h = (w * DEFAULT_ASPECT.h) / DEFAULT_ASPECT.w
+    const img = active.querySelector('.image img')
+    const video = active.querySelector('video.dv-index-media-carousel__video')
+    const natW =
+      img && img instanceof HTMLImageElement
+        ? img.naturalWidth
+        : video && video instanceof HTMLVideoElement
+          ? video.videoWidth
+          : 0
+    const natH =
+      img && img instanceof HTMLImageElement
+        ? img.naturalHeight
+        : video && video instanceof HTMLVideoElement
+          ? video.videoHeight
+          : 0
+
+    let w = 0
+    let h = 0
+    if (natW > 0 && natH > 0) {
+      const scale = Math.min(maxW / natW, maxH / natH, 1)
+      w = natW * scale
+      h = natH * scale
+    } else {
+      w =
+        imageBox && imageBox instanceof HTMLElement
+          ? imageBox.offsetWidth
+          : viewport.getBoundingClientRect().width
+      if (w < 4) {
+        w = maxW
+      }
+      h = active.offsetHeight
+      if (h < 4) {
+        h = (w * DEFAULT_ASPECT.h) / DEFAULT_ASPECT.w
+      }
+      h = Math.min(h, maxH)
     }
+
+    const wPx = Math.ceil(w)
+    viewport.style.width = `${wPx}px`
     viewport.style.height = `${Math.ceil(h)}px`
+    /**
+     * 1) But : transmettre au CSS la largeur du média actif.
+     * 2) Variable clé : `--dv-slide-media-w` lue par le bandeau overlay.
+     * 3) Flux : le bandeau ne dépasse plus quand une slide est plus étroite (mobile).
+     */
+    active.style.setProperty('--dv-slide-media-w', `${wPx}px`)
   }
 
   // Chaque slide : proportions natives ; quand la slide active change de taille (chargement), on resynchronise.

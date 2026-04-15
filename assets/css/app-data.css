@@ -1,733 +1,747 @@
 /* Couche UI données (galerie, boutique, articles, admin) — complète le thème Pixelarity */
 
 html {
-	/* 1) But : rendre les navigations d’ancre progressives (ex. vers #index-contact-section). */
-	/* 2) Variable clé : comportement natif smooth au scroll. */
-	/* 3) Flux : transition visuelle douce lors des redirections internes avec hash. */
-	scroll-behavior: smooth;
+  /* 1) But : rendre les navigations d’ancre progressives (ex. vers #index-contact-section). */
+  /* 2) Variable clé : comportement natif smooth au scroll. */
+  /* 3) Flux : transition visuelle douce lors des redirections internes avec hash. */
+  scroll-behavior: smooth;
 }
 
 /* ——— Grille médias (miniatures) ——— */
 .dv-media-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-	gap: 0.7rem;
-	margin: 1.5rem 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 0.7rem;
+  margin: 1.5rem 0;
 }
 
 .dv-media-thumb {
-	/* 1) But : forcer des miniatures strictement carrées malgré les styles globaux du thème. */
-	/* 2) Variables clés : height/line-height/padding reset + ratio 1:1 prioritaire. */
-	/* 3) Flux : image conservée proportionnelle, avec recadrage centré via object-fit: cover. */
-	position: relative;
-	aspect-ratio: 1 / 1 !important;
-	overflow: hidden;
-	border-radius: 6px;
-	background: rgba(0, 0, 0, 0.2);
-	cursor: pointer;
-	border: none;
-	padding: 0 !important;
-	width: 100%;
-	height: auto !important;
-	min-height: 0;
-	line-height: 0 !important;
-	display: block;
-	box-shadow: none !important;
+  /* 1) But : forcer des miniatures strictement carrées malgré les styles globaux du thème. */
+  /* 2) Variables clés : height/line-height/padding reset + ratio 1:1 prioritaire. */
+  /* 3) Flux : image conservée proportionnelle, avec recadrage centré via object-fit: cover. */
+  position: relative;
+  aspect-ratio: 1 / 1 !important;
+  overflow: hidden;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  border: none;
+  padding: 0 !important;
+  width: 100%;
+  height: auto !important;
+  min-height: 0;
+  line-height: 0 !important;
+  display: block;
+  box-shadow: none !important;
 }
 
 .dv-media-thumb img,
 .dv-media-thumb video {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	object-position: center;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .dv-gallery-controls {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 0.7rem 1rem;
-	margin-bottom: 1rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem 1rem;
+  margin-bottom: 1rem;
 }
 
 .dv-gallery-controls__field label {
-	display: block;
-	margin-bottom: 0.35rem;
+  display: block;
+  margin-bottom: 0.35rem;
 }
 
 @media screen and (max-width: 736px) {
-	.dv-gallery-controls {
-		grid-template-columns: 1fr;
-	}
+  .dv-gallery-controls {
+    grid-template-columns: 1fr;
+  }
 }
 
 .dv-media-thumb__play {
-	position: absolute;
-	inset: 0;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 2rem;
-	color: #fff;
-	text-shadow: 0 0 8px #000;
-	pointer-events: none;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: #fff;
+  text-shadow: 0 0 8px #000;
+  pointer-events: none;
 }
 
 /* ——— Modal média ——— */
 .dv-media-modal {
-	position: fixed;
-	inset: 0;
-	z-index: 20000;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	visibility: hidden;
-	opacity: 0;
-	transition: opacity 0.2s ease, visibility 0.2s;
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s;
 }
 
 .dv-media-modal.is-open {
-	visibility: visible;
-	opacity: 1;
+  visibility: visible;
+  opacity: 1;
 }
 
 .dv-media-modal__backdrop {
-	position: absolute;
-	inset: 0;
-	background: rgba(10, 10, 12, 0.92);
-	cursor: pointer;
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 12, 0.92);
+  cursor: pointer;
 }
 
 .dv-media-modal__panel {
-	position: relative;
-	z-index: 1;
-	max-width: 96vw;
-	max-height: 92vh;
-	margin: 1rem;
+  position: relative;
+  z-index: 1;
+  max-width: 96vw;
+  max-height: 92vh;
+  margin: 1rem;
 }
 
 .dv-media-modal__close {
-	position: absolute;
-	top: 0.75rem;
-	right: 0.75rem;
-	width: 2.8rem !important;
-	height: 2.8rem !important;
-	min-width: 2.8rem !important;
-	min-height: 2.8rem !important;
-	background: #ffffff;
-	border: none;
-	border-radius: 50% !important;
-	color: #111111;
-	font-size: 1.55rem;
-	line-height: 1 !important;
-	cursor: pointer;
-	padding: 0 !important;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	text-align: center;
-	appearance: none;
-	-webkit-appearance: none;
-	box-shadow: 0 0.2rem 0.7rem rgba(0, 0, 0, 0.25);
-	transition: transform 0.16s ease, opacity 0.16s ease;
-	position: absolute;
-	overflow: hidden;
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 2.8rem !important;
+  height: 2.8rem !important;
+  min-width: 2.8rem !important;
+  min-height: 2.8rem !important;
+  background: #ffffff;
+  border: none;
+  border-radius: 50% !important;
+  color: #111111;
+  font-size: 1.55rem;
+  line-height: 1 !important;
+  cursor: pointer;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  appearance: none;
+  -webkit-appearance: none;
+  box-shadow: 0 0.2rem 0.7rem rgba(0, 0, 0, 0.25);
+  transition:
+    transform 0.16s ease,
+    opacity 0.16s ease;
+  position: absolute;
+  overflow: hidden;
 }
 
 .dv-media-modal__close:hover {
-	transform: scale(1.04);
+  transform: scale(1.04);
 }
 
 .dv-media-modal__close:active {
-	transform: scale(0.98);
+  transform: scale(0.98);
 }
 
 .dv-media-modal__nav {
-	position: absolute;
-	top: 50%;
-	transform: translateY(-50%);
-	width: 2.8rem !important;
-	height: 2.8rem !important;
-	min-width: 2.8rem !important;
-	min-height: 2.8rem !important;
-	border: none;
-	border-radius: 50% !important;
-	background: #ffffff;
-	color: #111111;
-	font-size: 1.55rem;
-	line-height: 1 !important;
-	display: none;
-	align-items: center;
-	justify-content: center;
-	cursor: pointer;
-	padding: 0 !important;
-	appearance: none;
-	-webkit-appearance: none;
-	text-align: center;
-	text-indent: 0;
-	white-space: nowrap;
-	box-shadow: 0 0.2rem 0.7rem rgba(0, 0, 0, 0.25);
-	transition: transform 0.16s ease, opacity 0.16s ease;
-	overflow: hidden;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.8rem !important;
+  height: 2.8rem !important;
+  min-width: 2.8rem !important;
+  min-height: 2.8rem !important;
+  border: none;
+  border-radius: 50% !important;
+  background: #ffffff;
+  color: #111111;
+  font-size: 1.55rem;
+  line-height: 1 !important;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0 !important;
+  appearance: none;
+  -webkit-appearance: none;
+  text-align: center;
+  text-indent: 0;
+  white-space: nowrap;
+  box-shadow: 0 0.2rem 0.7rem rgba(0, 0, 0, 0.25);
+  transition:
+    transform 0.16s ease,
+    opacity 0.16s ease;
+  overflow: hidden;
 }
 
 .dv-media-modal.has-nav .dv-media-modal__nav {
-	display: inline-flex;
+  display: inline-flex;
 }
 
 .dv-media-modal__nav--prev {
-	left: 0.75rem;
+  left: 0.75rem;
 }
 
 .dv-media-modal__nav--next {
-	right: 0.75rem;
+  right: 0.75rem;
 }
 
 .dv-media-modal__nav:hover {
-	transform: translateY(-50%) scale(1.04);
+  transform: translateY(-50%) scale(1.04);
 }
 
 .dv-media-modal__nav:active {
-	transform: translateY(-50%) scale(0.98);
+  transform: translateY(-50%) scale(0.98);
 }
 
 .dv-media-modal__icon {
-	/* 1) But : centrage précis de l’icône dans le rond (indépendant des baselines de police). */
-	/* 2) Variable clé : position absolue au centre du bouton + translate exact. */
-	/* 3) Flux : flèches et croix visuellement parfaitement centrées. */
-	position: absolute;
-	left: 50%;
-	top: 50%;
-	transform: translate(-50%, -50%);
-	line-height: 1;
-	font-weight: 700;
-	pointer-events: none;
+  /* 1) But : centrage précis de l’icône dans le rond (indépendant des baselines de police). */
+  /* 2) Variable clé : position absolue au centre du bouton + translate exact. */
+  /* 3) Flux : flèches et croix visuellement parfaitement centrées. */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  line-height: 1;
+  font-weight: 700;
+  pointer-events: none;
 }
 
 .dv-media-modal__img,
 .dv-media-modal__video,
 .dv-media-modal__iframe {
-	display: block;
-	max-width: 92vw;
-	max-height: 88vh;
-	width: auto;
-	height: auto;
-	border-radius: 4px;
+  display: block;
+  max-width: 92vw;
+  max-height: 88vh;
+  width: auto;
+  height: auto;
+  border-radius: 4px;
 }
 
 .dv-media-modal__iframe {
-	width: min(960px, 92vw);
-	height: min(540px, 70vh);
+  width: min(960px, 92vw);
+  height: min(540px, 70vh);
 }
 
 @media screen and (max-width: 736px) {
-	/* Mobile : navigation par swipe, donc flèches visuelles masquées. */
-	.dv-media-modal.has-nav .dv-media-modal__nav {
-		display: none !important;
-	}
+  /* Mobile : navigation par swipe, donc flèches visuelles masquées. */
+  .dv-media-modal.has-nav .dv-media-modal__nav {
+    display: none !important;
+  }
 }
 
 /* ——— Liste articles ——— */
 .dv-article-list {
-	list-style: none;
-	padding: 0;
-	margin: 0;
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 1.2rem 0;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.2rem 0;
 }
 
 .dv-article-list li {
-	margin: 0;
-	padding: 1.05rem 1.2rem 1.2rem;
-	border-bottom: 1px solid rgba(67, 75, 86, 0.2);
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	text-align: center;
+  margin: 0;
+  padding: 1.05rem 1.2rem 1.2rem;
+  border-bottom: 1px solid rgba(67, 75, 86, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 .dv-article-list li:last-child {
-	margin: 0;
-	padding: 1.05rem 1rem 1.2rem;
+  margin: 0;
+  padding: 1.05rem 1rem 1.2rem;
 }
 
 .dv-article-list__title {
-	/* Titres style "Heading Level 4" (elements.html) : compact, uppercase, tracking marqué. */
-	display: inline-block;
-	font-size: 0.9em;
-	font-weight: 600;
-	letter-spacing: 0.1em;
-	text-transform: uppercase;
-	line-height: 1.45;
-	margin: 0 0 0.6rem;
+  /* Titres style "Heading Level 4" (elements.html) : compact, uppercase, tracking marqué. */
+  display: inline-block;
+  font-size: 0.9em;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1.45;
+  margin: 0 0 0.6rem;
 }
 
 .dv-article-list__thumb-wrap {
-	width: 7rem;
-	height: 7rem;
-	border-radius: 50%;
-	overflow: hidden;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	background: rgba(67, 75, 86, 0.08);
-	margin: 0 0 0.65rem;
+  width: 7rem;
+  height: 7rem;
+  border-radius: 50%;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(67, 75, 86, 0.08);
+  margin: 0 0 0.65rem;
 }
 
 .dv-article-list__thumb {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .dv-article-list__thumb-wrap--empty {
-	background: rgba(67, 75, 86, 0.12);
+  background: rgba(67, 75, 86, 0.12);
 }
 
 .dv-article-list__excerpt {
-	/* Description légèrement réduite pour mieux hiérarchiser face au titre. */
-	font-size: 0.9rem;
-	line-height: 1.5;
-	opacity: 0.82;
-	margin: 0 0 0.95rem;
-	max-width: 34ch;
+  /* Description légèrement réduite pour mieux hiérarchiser face au titre. */
+  font-size: 0.9rem;
+  line-height: 1.5;
+  opacity: 0.82;
+  margin: 0 0 0.95rem;
+  max-width: 34ch;
 }
 
 .dv-article-list__actions {
-	margin-top: auto;
-	display: flex;
-	justify-content: center;
-	width: 100%;
+  margin-top: auto;
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
 
 .dv-article-list__actions .button {
-	margin: 0;
+  margin: 0;
 }
 
 @media screen and (max-width: 980px) {
-	.dv-article-list {
-		grid-template-columns: 1fr;
-	}
+  .dv-article-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media screen and (max-width: 736px) {
-	.dv-article-list__title {
-		font-size: 0.82em;
-	}
+  .dv-article-list__title {
+    font-size: 0.82em;
+  }
 
-	.dv-article-list__thumb-wrap {
-		width: 5.8rem;
-		height: 5.8rem;
-	}
+  .dv-article-list__thumb-wrap {
+    width: 5.8rem;
+    height: 5.8rem;
+  }
 }
 
 .dv-event-badge {
-	display: inline-block;
-	font-size: 0.75rem;
-	text-transform: uppercase;
-	letter-spacing: 0.06em;
-	padding: 0.2rem 0.5rem;
-	border-radius: 4px;
-	background: rgba(144, 206, 255, 0.2);
-	color: #b8e0ff;
-	margin-right: 0.5rem;
+  display: inline-block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(144, 206, 255, 0.2);
+  color: #b8e0ff;
+  margin-right: 0.5rem;
 }
 
 /* Pastille événement complète (label + date/heure/lieu). */
 .dv-event-pill {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.25rem;
-	padding: 0.3rem 0.75rem;
-	border-radius: 999px;
-	background: rgba(76, 171, 177, 0.14);
-	border: 1px solid rgba(76, 171, 177, 0.35);
-	color: #3c6f74;
-	font-size: 0.7rem;
-	font-weight: 600;
-	letter-spacing: 0.015em;
-	line-height: 1.35;
-	white-space: normal;
-	margin: 0 0 0.05rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(76, 171, 177, 0.14);
+  border: 1px solid rgba(76, 171, 177, 0.35);
+  color: #3c6f74;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  line-height: 1.35;
+  white-space: normal;
+  margin: 0 0 0.05rem;
 }
 
 @media screen and (max-width: 736px) {
-	.dv-event-pill {
-		font-size: 0.62rem;
-		padding: 0.2rem 0.55rem;
-	}
+  .dv-event-pill {
+    font-size: 0.62rem;
+    padding: 0.2rem 0.55rem;
+  }
 }
 
 /* Séparateur vertical entre les 2 cartes de la même ligne (desktop/tablette large). */
 @media screen and (min-width: 981px) {
-	.dv-article-list li:nth-child(odd) {
-		border-right: 1px solid rgba(67, 75, 86, 0.2);
-	}
+  .dv-article-list li:nth-child(odd) {
+    border-right: 1px solid rgba(67, 75, 86, 0.2);
+  }
 }
 
 /* ——— Boutique ——— */
 .dv-product-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-	gap: 1.5rem;
-	margin-top: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
 }
 
 .dv-product-card {
-	border-radius: 8px;
-	overflow: hidden;
-	background: rgba(0, 0, 0, 0.15);
-	display: flex;
-	flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
 }
 
 .dv-product-card__img {
-	aspect-ratio: 3/4;
-	object-fit: cover;
-	width: 100%;
-	display: block;
+  aspect-ratio: 3/4;
+  object-fit: cover;
+  width: 100%;
+  display: block;
 }
 
 .dv-product-card__body {
-	padding: 1rem 1.1rem 1.25rem;
-	flex: 1;
-	display: flex;
-	flex-direction: column;
+  padding: 1rem 1.1rem 1.25rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .dv-product-card__title {
-	margin: 0 0 0.5rem;
-	font-size: 1.1rem;
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
 }
 
 /* Résumé : 3 lignes par défaut ; .is-expanded sur le bloc retire le clamp */
 .dv-product-card__synopsis-block {
-	position: relative;
-	flex: 1;
-	margin-bottom: 0.75rem;
+  position: relative;
+  flex: 1;
+  margin-bottom: 0.75rem;
 }
 
 .dv-product-card__synopsis {
-	font-size: 0.9rem;
-	opacity: 0.85;
-	margin: 0;
-	line-height: 1.45;
+  font-size: 0.9rem;
+  opacity: 0.85;
+  margin: 0;
+  line-height: 1.45;
 }
 
 .dv-product-card__synopsis--clamped {
-	display: -webkit-box;
-	-webkit-box-orient: vertical;
-	-webkit-line-clamp: 3;
-	overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
 }
 
 /* Annule les styles globaux du thème sur `button` : uniquement texte + icône, sans cadre ni fond */
 .dv-product-card__toggle {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.35rem;
-	margin: 0;
-	padding: 0;
-	min-height: 0;
-	height: auto;
-	line-height: 1.45;
-	background: transparent !important;
-	background-color: transparent !important;
-	box-shadow: none !important;
-	border: none !important;
-	border-radius: 0 !important;
-	color: inherit !important;
-	font-family: inherit;
-	font-size: 0.9rem;
-	font-weight: inherit;
-	letter-spacing: normal;
-	text-transform: none;
-	text-align: left;
-	white-space: normal;
-	cursor: pointer;
-	transition: none;
-	opacity: 0.85;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+  height: auto;
+  line-height: 1.45;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  color: inherit !important;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: left;
+  white-space: normal;
+  cursor: pointer;
+  transition: none;
+  opacity: 0.85;
 }
 
 .dv-product-card__toggle:hover,
 .dv-product-card__toggle:active {
-	background: transparent !important;
-	background-color: transparent !important;
-	box-shadow: none !important;
-	opacity: 1;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  opacity: 1;
 }
 
 .dv-product-card__toggle:focus {
-	outline: none;
+  outline: none;
 }
 
 .dv-product-card__toggle:focus-visible {
-	outline: 1px dotted currentColor;
-	outline-offset: 2px;
+  outline: 1px dotted currentColor;
+  outline-offset: 2px;
 }
 
 .dv-product-card__toggle .dv-product-card__toggle-chevron {
-	display: inline-block;
-	transition: transform 0.2s ease;
+  display: inline-block;
+  transition: transform 0.2s ease;
 }
 
 .dv-product-card__toggle .icon:before {
-	margin-right: 0;
+  margin-right: 0;
 }
 
 .dv-product-card__synopsis-block.is-expanded .dv-product-card__toggle-chevron {
-	transform: rotate(180deg);
+  transform: rotate(180deg);
 }
 
 .dv-product-card__toggle[hidden] {
-	display: none;
+  display: none;
 }
 
 .dv-price-row {
-	display: flex;
-	align-items: baseline;
-	gap: 0.5rem;
-	flex-wrap: wrap;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .dv-price {
-	font-size: 1.25rem;
-	font-weight: 600;
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
 .dv-price--old {
-	font-size: 0.85rem;
-	text-decoration: line-through;
-	opacity: 0.65;
-	font-weight: 400;
+  font-size: 0.85rem;
+  text-decoration: line-through;
+  opacity: 0.65;
+  font-weight: 400;
 }
 
 /* ——— Accueil : 3 derniers articles (miniature ronde + accroche une ligne) ——— */
 .dv-index-recent.features .dv-index-recent__link {
-	display: block;
-	text-decoration: none;
-	color: inherit;
-	border: none;
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border: none;
 }
 
 .dv-index-recent.features .dv-index-recent__link:hover {
-	color: inherit;
+  color: inherit;
 }
 
 .dv-index-recent__thumb-wrap {
-	display: block;
-	width: 7rem;
-	height: 7rem;
-	margin: 0 auto 1rem;
-	border-radius: 50%;
-	overflow: hidden;
-	background: rgba(0, 0, 0, 0.15);
+  display: block;
+  width: 7rem;
+  height: 7rem;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.15);
 }
 
 .dv-index-recent__thumb {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .dv-index-recent.features .dv-index-recent__line {
-	margin: 0.5rem 0 0;
-	font-size: 0.9rem;
-	opacity: 0.88;
-	line-height: 1.4;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+  opacity: 0.88;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Apparition au scroll : section "Derniers articles" qui remonte depuis le bas. */
 .dv-reveal-up {
-	opacity: 0;
-	transform: translateY(36px);
-	transition: opacity 1.5s ease, transform 1.5s ease;
-	will-change: opacity, transform;
+  opacity: 0;
+  transform: translateY(36px);
+  transition:
+    opacity 1.5s ease,
+    transform 1.5s ease;
+  will-change: opacity, transform;
 }
 
 .dv-reveal-up.is-visible {
-	opacity: 1;
-	transform: translateY(0);
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* Apparition au scroll depuis la gauche (Rencontres & lectures). */
 .dv-reveal-left {
-	opacity: 0;
-	transform: translateX(-42px);
-	transition: opacity 1.5s ease, transform 1.5s ease;
-	will-change: opacity, transform;
+  opacity: 0;
+  transform: translateX(-42px);
+  transition:
+    opacity 1.5s ease,
+    transform 1.5s ease;
+  will-change: opacity, transform;
 }
 
 .dv-reveal-left.is-visible {
-	opacity: 1;
-	transform: translateX(0);
+  opacity: 1;
+  transform: translateX(0);
 }
 
 /* Apparition au scroll depuis la droite (section Contact). */
 .dv-reveal-right {
-	opacity: 0;
-	transform: translateX(42px);
-	transition: opacity 1.5s ease, transform 1.5s ease;
-	will-change: opacity, transform;
+  opacity: 0;
+  transform: translateX(42px);
+  transition:
+    opacity 1.5s ease,
+    transform 1.5s ease;
+  will-change: opacity, transform;
 }
 
 .dv-reveal-right.is-visible {
-	opacity: 1;
-	transform: translateX(0);
+  opacity: 1;
+  transform: translateX(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.dv-reveal-up,
-	.dv-reveal-up.is-visible,
-	.dv-reveal-left,
-	.dv-reveal-left.is-visible,
-	.dv-reveal-right,
-	.dv-reveal-right.is-visible {
-		transition: none;
-		transform: none;
-		opacity: 1;
-	}
+  .dv-reveal-up,
+  .dv-reveal-up.is-visible,
+  .dv-reveal-left,
+  .dv-reveal-left.is-visible,
+  .dv-reveal-right,
+  .dv-reveal-right.is-visible {
+    transition: none;
+    transform: none;
+    opacity: 1;
+  }
 }
 
 /* Accueil : section Contact en 2 colonnes (auteur / maison d’édition NomBre7). */
 .dv-index-contact__grid {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 0;
-	align-items: start;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  align-items: start;
 }
 
 .dv-index-contact__card {
-	/* Rendu "section" sans encadré : on garde seulement l'espacement interne. */
-	padding: 0.35rem 1.25rem 0;
+  /* Rendu "section" sans encadré : on garde seulement l'espacement interne. */
+  padding: 0.35rem 1.25rem 0;
 }
 
 .dv-index-contact__card h3 {
-	margin: 0 0 0.95rem;
+  margin: 0 0 0.95rem;
 }
 
 /* Séparation verticale unique entre les 2 formulaires (desktop/tablette). */
 .dv-index-contact__card + .dv-index-contact__card {
-	border-left: 1px solid rgba(67, 75, 86, 0.18);
+  border-left: 1px solid rgba(67, 75, 86, 0.18);
 }
 
 .dv-index-contact__form .actions {
-	margin-top: 0.35rem;
-	margin-bottom: 0;
+  margin-top: 0.35rem;
+  margin-bottom: 0;
 }
 
 @media screen and (max-width: 980px) {
-	.dv-index-contact__grid {
-		grid-template-columns: 1fr;
-	}
+  .dv-index-contact__grid {
+    grid-template-columns: 1fr;
+  }
 
-	/* Mobile : plus de séparation verticale quand la grille repasse en colonne unique. */
-	.dv-index-contact__card + .dv-index-contact__card {
-		border-left: none;
-		border-top: 1px solid rgba(67, 75, 86, 0.14);
-		margin-top: 1.1rem;
-		padding-top: 1.2rem;
-	}
+  /* Mobile : plus de séparation verticale quand la grille repasse en colonne unique. */
+  .dv-index-contact__card + .dv-index-contact__card {
+    border-left: none;
+    border-top: 1px solid rgba(67, 75, 86, 0.14);
+    margin-top: 1.1rem;
+    padding-top: 1.2rem;
+  }
 }
 
 /* ——— Accueil : diaporama médias (jaune / accent4) ——— */
 .dv-index-media-carousel-wrap {
-	max-width: 100%;
+  max-width: 100%;
 }
 
 /* Réduit l’espace blanc excessif entre le diaporama et le bloc « Sed tempus » (section .main suivante). */
 #index-media-carousel-root + section.main {
-	padding-top: 3.25em;
+  padding-top: 3.25em;
 }
 
 /* Diaporama : moins de marge verticale que le carrousel générique du thème pour un enchaînement plus serré. */
 .dv-index-media-carousel.carousel {
-	padding-top: 3.25em;
-	padding-bottom: 2.75em;
+  padding-top: 3.25em;
+  padding-bottom: 2.75em;
 }
 
 .dv-index-media-carousel__loading,
 .dv-index-media-carousel__empty {
-	text-align: center;
-	padding: 2em 1em;
+  text-align: center;
+  padding: 2em 1em;
 }
 
 /* Piste horizontale : toutes les slides restent dans le DOM (pas de « trou » au changement). */
 .dv-index-media-carousel__viewport {
-	overflow: hidden;
-	width: min(100%, 500px);
-	max-width: 100%;
-	margin-left: auto;
-	margin-right: auto;
-	position: relative;
-	border-radius: 12px;
-	/* 1) But : contour très fin à l’intérieur (pas à l’extérieur). */
-	/* 2) Variable clé : liseré inset de teinte accent4. */
-	/* 3) Flux visuel : contour discret sans élargir le bloc. */
-	box-shadow: inset 0 0 0 1px rgba(254, 213, 134, 0.9);
-	/* Largeur + hauteur pilotées en JS selon la slide active. */
-	transition: height 0.4s ease-in-out, width 0.4s ease-in-out;
+  overflow: hidden;
+  width: min(100%, 750px);
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  border-radius: 12px;
+  /* 1) But : contour très fin à l’intérieur (pas à l’extérieur). */
+  /* 2) Variable clé : liseré inset de teinte accent4. */
+  /* 3) Flux visuel : contour discret sans élargir le bloc. */
+  box-shadow: inset 0 0 0 1px rgba(254, 213, 134, 0.9);
+  /* Largeur + hauteur pilotées en JS selon la slide active. */
+  transition:
+    height 0.4s ease-in-out,
+    width 0.4s ease-in-out;
 }
 
 .dv-index-media-carousel__track {
-	display: flex;
-	flex-direction: row;
-	flex-wrap: nowrap;
-	/* Chaque slide garde sa propre hauteur (ratio du média), pas la hauteur max du lot. */
-	align-items: flex-start;
-	transition: transform 0.4s ease-in-out;
-	will-change: transform;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  /* Chaque slide garde sa propre hauteur (ratio du média), pas la hauteur max du lot. */
+  align-items: flex-start;
+  transition: transform 0.4s ease-in-out;
+  will-change: transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.dv-index-media-carousel__viewport,
-	.dv-index-media-carousel__track {
-		transition-duration: 0.01ms;
-	}
+  .dv-index-media-carousel__viewport,
+  .dv-index-media-carousel__track {
+    transition-duration: 0.01ms;
+  }
 }
 
 /* Surcharge du thème : slides toujours « visibles » dans la piste (opacity / translateY du .carousel générique). */
 .dv-index-media-carousel .dv-index-media-carousel__track > article {
-	margin-top: 0 !important;
-	margin-left: 0 !important;
-	margin-right: 0 !important;
-	margin-bottom: 0 !important;
-	opacity: 1 !important;
-	visibility: visible !important;
-	transform: translateY(0) !important;
-	display: block !important;
+  margin-top: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  margin-bottom: 0 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0) !important;
+  display: block !important;
 }
 
 /* Le thème empile les articles du .carousel sur mobile avec des marges : on garde une seule rangée horizontale. */
 @media screen and (max-width: 736px) {
-	.dv-index-media-carousel .dv-index-media-carousel__track > article {
-		margin: 0 !important;
-	}
+  .dv-index-media-carousel .dv-index-media-carousel__track > article {
+    margin: 0 !important;
+  }
 }
 
 @media screen and (max-width: 480px) {
-	.dv-index-media-carousel .dv-index-media-carousel__track > article {
-		margin: 0 !important;
-	}
+  .dv-index-media-carousel .dv-index-media-carousel__track > article {
+    margin: 0 !important;
+  }
 }
 
 @media screen and (max-width: 980px) {
-	.dv-index-media-carousel.carousel nav {
-		display: block !important;
-	}
+  .dv-index-media-carousel.carousel nav {
+    display: block !important;
+  }
 }
 
 /* Mobile : navigation au swipe, on masque les flèches. */
 @media screen and (max-width: 736px) {
-	.dv-index-media-carousel.carousel nav {
-		display: none !important;
-	}
+  .dv-index-media-carousel.carousel nav {
+    display: none !important;
+  }
 }
 
 /*
@@ -735,179 +749,235 @@ html {
  * Surcharge du thème (.carousel article .image { height: 17em }) et du mobile (14em / 9em).
  */
 .dv-index-media-carousel .dv-index-media-carousel__track > article .image {
-	height: auto !important;
-	min-height: 0;
-	width: min(100%, 500px);
-	position: relative;
-	overflow: hidden;
-	aspect-ratio: auto !important;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	margin: 0 auto;
-	background: transparent;
+  height: auto !important;
+  min-height: 0;
+  /* 1) But : la boîte média suit la largeur réelle du visuel (pas de “cadre blanc” latéral). */
+  /* 2) Variables clés : `fit-content` + `max-width` pour rester responsive avec borne 750px. */
+  /* 3) Flux : portrait = bloc plus étroit ; paysage = bloc élargi jusqu’à la limite autorisée. */
+  width: fit-content;
+  max-width: min(100%, 750px);
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: auto !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  background: transparent;
 }
 
 .dv-index-media-carousel .dv-index-media-carousel__track > article .image img,
-.dv-index-media-carousel .dv-index-media-carousel__track > article .image .dv-index-media-carousel__video {
-	position: static;
-	width: auto;
-	height: auto;
-	max-width: min(100%, 500px);
-	max-height: 500px;
-	display: block;
-	object-fit: contain;
-	border-radius: 12px;
+.dv-index-media-carousel
+  .dv-index-media-carousel__track
+  > article
+  .image
+  .dv-index-media-carousel__video {
+  position: static;
+  width: auto;
+  height: auto;
+  max-width: min(100%, 750px);
+  max-height: 750px;
+  display: block;
+  object-fit: contain;
+  border-radius: 12px;
 }
 
 /* Conteneur slide : le bandeau est positionné en overlay sur la photo (plus en dessous dans le flux). */
 .dv-index-media-carousel.carousel article {
-	position: relative;
-	overflow: hidden;
+  position: relative;
+  overflow: hidden;
 }
 
 /* Bandeau compact : titre + résumé (colonne gauche) et bouton (droite) sur une même ligne flex → CTA centré en hauteur sur tout le bandeau. */
-.dv-index-media-carousel.carousel article .content.dv-index-media-carousel__banner {
-	position: absolute;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	z-index: 1;
-	padding: 0.45rem 0.65rem;
-	text-align: left;
-	background: rgba(255, 255, 255, 0.52);
-	backdrop-filter: blur(8px);
-	-webkit-backdrop-filter: blur(8px);
-	border-top: 1px solid rgba(255, 255, 255, 0.55);
-	box-shadow: 0 -0.15rem 0.65rem rgba(0, 0, 0, 0.06);
-	border-bottom-left-radius: 12px;
-	border-bottom-right-radius: 12px;
+.dv-index-media-carousel.carousel
+  article
+  .content.dv-index-media-carousel__banner {
+  position: absolute;
+  /* 1) But : garder le bandeau exactement sur la largeur de l’image active. */
+  /* 2) Variables clés : largeur injectée par JS (`--dv-slide-media-w`) + centrage horizontal. */
+  /* 3) Flux : pas d’élargissement parasite sur mobile quand la photo est plus étroite. */
+  left: 50%;
+  right: auto;
+  width: min(100%, var(--dv-slide-media-w, 100%));
+  transform: translateX(-50%);
+  bottom: 0;
+  z-index: 1;
+  padding: 0.45rem 0.65rem;
+  text-align: left;
+  /* Fond encore plus léger pour laisser davantage voir l’image sous le bandeau. */
+  background: rgba(255, 255, 255, 0.36);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 -0.15rem 0.65rem rgba(0, 0, 0, 0.06);
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
 }
 
 /* Ligne unique : align-items center aligne le bouton sur l’axe vertical du bloc titre+résumé (pas seulement du paragraphe). */
 .dv-index-media-carousel__banner-inner {
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-	justify-content: space-between;
-	gap: 0.75rem 1rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
 }
 
 /* Colonne texte : titre puis extrait empilés ; le bouton s’aligne au milieu de cette colonne vue comme un bloc. */
 .dv-index-media-carousel__banner-text {
-	flex: 1 1 auto;
-	min-width: 0;
-	display: flex;
-	flex-direction: column;
-	gap: 0.3rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
 }
 
 .dv-index-media-carousel__banner-title {
-	margin: 0;
-	font-size: 0.82rem;
-	line-height: 1.25;
-	text-align: left;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.25;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .dv-index-media-carousel__banner-excerpt {
-	margin: 0;
-	font-size: 0.78rem;
-	line-height: 1.35;
-	text-align: left;
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  text-align: left;
 }
 
 .dv-index-media-carousel__banner-cta {
-	flex: 0 0 auto;
-	display: flex;
-	align-items: center;
-	justify-content: center;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .dv-index-media-carousel__banner-cta .button {
-	margin: 0;
-	padding: 0 0.85em;
-	font-size: 0.72rem;
-	line-height: 2.15;
-	height: auto;
-	white-space: nowrap;
+  margin: 0;
+  padding: 0 0.85em;
+  font-size: 0.72rem;
+  line-height: 2.15;
+  height: auto;
+  white-space: nowrap;
 }
 
 @media screen and (max-width: 600px) {
-	.dv-index-media-carousel__banner-inner {
-		flex-direction: column;
-		align-items: stretch;
-	}
+  .dv-index-media-carousel__banner-inner {
+    /* 1) But : éviter un bandeau trop haut qui déborde visuellement sur petit écran. */
+    /* 2) Variables clés : conserver la ligne horizontale et réduire les écarts. */
+    /* 3) Flux : texte + CTA restent dans un ruban compact en bas de l’image. */
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem 0.7rem;
+  }
 
-	.dv-index-media-carousel__banner-cta {
-		align-self: flex-end;
-	}
+  .dv-index-media-carousel__banner-cta {
+    align-self: center;
+  }
+
+  .dv-index-media-carousel.carousel
+    article
+    .content.dv-index-media-carousel__banner {
+    padding: 0.35rem 0.5rem;
+  }
+
+  .dv-index-media-carousel__banner-title {
+    font-size: 0.74rem;
+  }
+
+  .dv-index-media-carousel__banner-excerpt {
+    font-size: 0.71rem;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .dv-index-media-carousel__banner-cta .button {
+    font-size: 0.66rem;
+    line-height: 1.95;
+    padding: 0 0.75em;
+  }
 }
 
 /* Galerie fixe : pas de bandeau texte (seulement le média) */
 .dv-index-media-carousel article.dv-slide--fixed .content {
-	display: none !important;
+  display: none !important;
 }
 
 /* Pastilles (autant que de médias, max 10 côté données) — dans le fond jaune du carrousel */
 .dv-index-media-carousel__dots {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: 0.5rem;
-	padding: 1rem 1rem 0.25rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1rem 1rem 0.25rem;
 }
 
 .dv-index-media-carousel__dots button.dv-index-media-carousel__dot {
-	width: 0.65rem;
-	height: 0.65rem;
-	border-radius: 50%;
-	padding: 0;
-	border: solid 1px rgba(67, 75, 86, 0.35);
-	background: transparent;
-	cursor: pointer;
-	transition: background 0.2s ease, border-color 0.2s ease;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  padding: 0;
+  border: solid 1px rgba(67, 75, 86, 0.35);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .dv-index-media-carousel__dots button.dv-index-media-carousel__dot:hover {
-	border-color: rgba(67, 75, 86, 0.65);
+  border-color: rgba(67, 75, 86, 0.65);
 }
 
 .dv-index-media-carousel__dots button.dv-index-media-carousel__dot.is-active {
-	background: #434b56;
-	border-color: #434b56;
+  background: #434b56;
+  border-color: #434b56;
 }
 
 .dv-index-media-carousel__actions {
-	margin-top: 0.65rem;
-	margin-bottom: 0;
+  margin-top: 0.65rem;
+  margin-bottom: 0;
 }
 
 /* Bouton "Voir la galerie" : même logique que les boutons primary d’une section accent4 (couleur de section + halo diffus). */
 .dv-index-media-carousel__actions .button.primary {
-	background-color: #ffde9f !important;
-	color: #ffffff !important;
-	box-shadow: 0 0 3em 0 rgba(0, 0, 0, 0.1);
+  background-color: #ffde9f !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 3em 0 rgba(0, 0, 0, 0.1);
 }
 
 .dv-index-media-carousel__actions .button.primary:hover {
-	background-color: #ffe7b8 !important;
+  background-color: #ffe7b8 !important;
 }
 
 .dv-index-media-carousel__actions .button.primary:active {
-	background-color: #ffefd2 !important;
+  background-color: #ffefd2 !important;
 }
 
 /* ——— Accueil : spotlights (à propos + calendrier + détail événement) ——— */
 .dv-spotlight-about,
 .dv-spotlight-event-detail {
-	text-align: left;
+  text-align: left;
 }
 
 .dv-spotlight-event-detail {
-	text-align: center;
+  text-align: center;
+  /* 1) But : centrer verticalement le contenu "événement sélectionné" dans la carte droite. */
+  /* 2) Variables clés : flex colonne + justify-content center + min-height alignée sur la cellule calendrier. */
+  /* 3) Flux : même équilibre visuel avec ou sans événement sélectionné. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 18.5rem;
 }
 
 /*
@@ -916,88 +986,92 @@ html {
  * - ligne 2 : calendrier (1/3) + détail événement (2/3)
  */
 .dv-index-rl-grid {
-	display: grid;
-	grid-template-columns: 2fr 1fr;
-	grid-template-areas:
-		'about photo'
-		'calendar detail';
-	gap: 1.35rem;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  grid-template-areas:
+    'about photo'
+    'calendar detail';
+  gap: 1.35rem;
 }
 
 .dv-index-rl-grid > article {
-	min-width: 0;
+  min-width: 0;
 }
 
 .dv-index-rl__about {
-	grid-area: about;
+  grid-area: about;
 }
 
 .dv-index-rl__photo-top {
-	grid-area: photo;
+  grid-area: photo;
 }
 
 .dv-index-rl__calendar {
-	grid-area: calendar;
+  grid-area: calendar;
 }
 
 .dv-index-rl__detail {
-	grid-area: detail;
+  grid-area: detail;
 }
 
 .dv-index-rl__about,
 .dv-index-rl__detail {
-	background: transparent;
-	border: none;
-	border-radius: 0;
-	padding: 0.25rem 0.1rem 0.1rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0.25rem 0.1rem 0.1rem;
 }
 
 /* Cartes images : hauteur mini cohérente avec les blocs texte. */
 .dv-index-rl__photo-top .image,
 .dv-index-rl__calendar {
-	height: 100%;
-	min-height: 18.5rem;
+  height: 100%;
+  min-height: 18.5rem;
 }
 
 .dv-index-rl__photo-top .image img,
 .dv-index-rl__calendar > img {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	border-radius: 8px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
 }
 
 .dv-spotlight-about h3 {
-	text-align: left;
-	margin-bottom: 0.75em;
+  text-align: left;
+  margin-bottom: 0.75em;
 }
 
 .dv-spotlight-about p {
-	text-align: left;
-	margin: 0 0 0.85em;
+  text-align: left;
+  margin: 0 0 0.85em;
 }
 
 .dv-spotlight-calendar-cell {
-	position: relative;
+  position: relative;
 }
 
 .dv-spotlight-calendar-cell > img {
-	z-index: 0;
+  z-index: 0;
+  /* 1) But : conserver l’image de fond intacte (pas de transparence appliquée ici). */
+  /* 2) Variable clé : opacité retirée sur le fond, pour agir seulement sur le calendrier. */
+  /* 3) Flux : seul le bloc `.dv-cal-card` pilote l’effet translucide demandé. */
+  opacity: 1;
 }
 
 .dv-spotlight-calendar {
-	position: absolute;
-	inset: 0;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 0.65rem;
-	z-index: 2;
-	pointer-events: none;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem;
+  z-index: 2;
+  pointer-events: none;
 }
 
 .dv-spotlight-calendar .dv-cal-card {
-	pointer-events: auto;
+  pointer-events: auto;
 }
 
 /*
@@ -1006,127 +1080,130 @@ html {
  * Leviers : largeur max réduite + paddings/gaps/tailles de cellules diminués + backdrop blur.
  */
 .dv-cal-card {
-	width: 100%;
-	max-width: 16.2rem;
-	background: rgba(255, 255, 255, 0.55);
-	border: 1px solid rgba(255, 255, 255, 0.6);
-	backdrop-filter: blur(8px);
-	-webkit-backdrop-filter: blur(8px);
-	border-radius: 10px;
-	box-shadow: 0 0.35rem 1.1rem rgba(0, 0, 0, 0.18);
-	padding: 0.45rem 0.42rem 0.5rem;
+  width: 100%;
+  max-width: 16.2rem;
+  /* 1) But : rendre le panneau calendrier plus translucide sans toucher aux textes/cases. */
+  /* 2) Variable clé : alpha du fond réduit (0.55 -> 0.4). */
+  /* 3) Flux : lisibilité maintenue via bordure + blur, fond plus léger visuellement. */
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 10px;
+  box-shadow: 0 0.35rem 1.1rem rgba(0, 0, 0, 0.18);
+  padding: 0.45rem 0.42rem 0.5rem;
 }
 
 .dv-cal__toolbar {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 0.2rem;
-	margin-bottom: 0.2rem;
-	min-height: 1.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.2rem;
+  margin-bottom: 0.2rem;
+  min-height: 1.7rem;
 }
 
 .dv-cal__title {
-	margin: 0;
-	font-size: 0.82rem;
-	letter-spacing: 0.08em;
-	line-height: 1.2;
-	flex: 1;
-	text-align: center;
+  margin: 0;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  flex: 1;
+  text-align: center;
 }
 
 .dv-cal__nav {
-	background: transparent;
-	border: none;
-	cursor: pointer;
-	font-size: 1.15rem;
-	line-height: 1;
-	padding: 0.14rem 0.34rem;
-	color: #434b56;
-	border-radius: 4px;
-	height: 1.7rem;
-	min-width: 1.7rem;
-	box-shadow: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 0.14rem 0.34rem;
+  color: #434b56;
+  border-radius: 4px;
+  height: 1.7rem;
+  min-width: 1.7rem;
+  box-shadow: none;
 }
 
 .dv-cal__nav:hover {
-	background: rgba(67, 75, 86, 0.1);
+  background: rgba(67, 75, 86, 0.1);
 }
 
 .dv-cal__weekdays {
-	display: grid;
-	grid-template-columns: repeat(7, 1fr);
-	gap: 1px;
-	text-align: center;
-	font-size: 0.53rem;
-	text-transform: uppercase;
-	letter-spacing: 0.06em;
-	opacity: 0.75;
-	margin-bottom: 0.15rem;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  text-align: center;
+  font-size: 0.53rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+  margin-bottom: 0.15rem;
 }
 
 .dv-cal__weekdays span {
-	display: block;
+  display: block;
 }
 
 .dv-cal__grid {
-	display: grid;
-	grid-template-columns: repeat(7, 1fr);
-	gap: 2px;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
 }
 
 .dv-cal__day {
-	border: none;
-	background: rgba(255, 255, 255, 0.48);
-	border-radius: 4px;
-	padding: 0;
-	aspect-ratio: 1 / 1;
-	width: 100%;
-	height: auto;
-	min-width: 0;
-	min-height: 0;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	line-height: 1;
-	white-space: normal;
-	font-size: 0.67rem;
-	cursor: pointer;
-	color: #434b56;
+  border: none;
+  background: rgba(255, 255, 255, 0.48);
+  border-radius: 4px;
+  padding: 0;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  white-space: normal;
+  font-size: 0.67rem;
+  cursor: pointer;
+  color: #434b56;
 }
 
 .dv-cal__day:hover {
-	background: rgba(67, 75, 86, 0.14);
+  background: rgba(67, 75, 86, 0.14);
 }
 
 .dv-cal__day.is-other-month {
-	opacity: 0.38;
-	cursor: default;
+  opacity: 0.38;
+  cursor: default;
 }
 
 .dv-cal__day.is-other-month.has-event {
-	opacity: 0.9;
-	cursor: pointer;
+  opacity: 0.9;
+  cursor: pointer;
 }
 
 .dv-cal__day.has-event {
-	background: rgba(105, 199, 173, 0.45);
-	font-weight: 700;
-	box-shadow: inset 0 0 0 1px rgba(105, 199, 173, 0.78);
+  background: rgba(105, 199, 173, 0.45);
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgba(105, 199, 173, 0.78);
 }
 
 .dv-cal__day.has-event:hover {
-	background: rgba(105, 199, 173, 0.62);
+  background: rgba(105, 199, 173, 0.62);
 }
 
 .dv-cal__day.is-selected {
-	outline: 2px solid #575b72;
-	outline-offset: 1px;
+  outline: 2px solid #575b72;
+  outline-offset: 1px;
 }
 
 /* Jour courant : cadre visible même sans sélection. */
 .dv-cal__day.is-today {
-	box-shadow: inset 0 0 0 2px rgba(87, 91, 114, 0.7);
+  box-shadow: inset 0 0 0 2px rgba(87, 91, 114, 0.7);
 }
 
 /*
@@ -1134,130 +1211,127 @@ html {
  * On garde la sélection prioritaire : si le jour est sélectionné, son style is-selected reste visible.
  */
 .dv-cal__day.is-past:not(.is-selected) {
-	background: transparent;
-	box-shadow: none;
-	outline: none;
-	color: rgba(67, 75, 86, 0.55);
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  color: rgba(67, 75, 86, 0.55);
 }
 
 .dv-cal__day.is-past.has-event:not(.is-selected) {
-	background: rgba(105, 199, 173, 0.1);
-	box-shadow: none;
+  background: rgba(105, 199, 173, 0.1);
+  box-shadow: none;
 }
 
 .dv-event-detail__hint {
-	margin: 0;
-	font-size: 0.95rem;
-	opacity: 0.88;
-	line-height: 1.55;
-	text-align: center;
+  margin: 0;
+  font-size: 0.95rem;
+  opacity: 0.88;
+  line-height: 1.55;
+  text-align: center;
 }
 
 .dv-event-detail__hint-event {
-	/* 1) But : rappeler visuellement le style des cases "has-event" du calendrier. */
-	/* 2) Variables clés : fond vert doux + contour vert fin + typographie lisible. */
-	/* 3) Flux : le mot-clé "événement" ressort sans casser la phrase. */
-	display: inline-block;
-	padding: 0.08rem 0.5rem;
-	border-radius: 999px;
-	background: rgba(105, 199, 173, 0.22);
-	border: 1px solid rgba(105, 199, 173, 0.78);
-	color: #3f6f67;
-	font-weight: 600;
-	line-height: 1.2;
+  /* 1) But : rappeler visuellement le style des cases "has-event" du calendrier. */
+  /* 2) Variables clés : fond vert doux + contour vert fin + typographie lisible. */
+  /* 3) Flux : le mot-clé "événement" ressort sans casser la phrase. */
+  display: inline-block;
+  padding: 0.08rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(105, 199, 173, 0.22);
+  border: 1px solid rgba(105, 199, 173, 0.78);
+  color: #3f6f67;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
 .dv-spotlight-event-detail.is-empty {
-	/* 1) But : centrer verticalement le texte d’aide dans la carte détail. */
-	/* 2) Variables clés : flex + min-height pour conserver la présence visuelle. */
-	/* 3) Flux : l’état “sans sélection” reste équilibré à côté du calendrier. */
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	min-height: 18.5rem;
+  /* 1) But : conserver un rendu centré pour l’état sans sélection. */
+  /* 2) Variable clé : pas de surcharge structurelle, le centrage est déjà porté par `.dv-spotlight-event-detail`. */
+  /* 3) Flux : uniquement l’opacité/espacement du message d’aide changent selon l’état. */
+  opacity: 1;
 }
 
 .dv-spotlight-event-detail h3 {
-	margin-bottom: 0.65em;
-	text-align: center;
+  margin-bottom: 0.65em;
+  text-align: center;
 }
 
 .dv-event-detail__excerpt {
-	text-align: center;
-	margin: 0 0 1.25em;
-	line-height: 1.55;
+  text-align: center;
+  margin: 0 0 1.25em;
+  line-height: 1.55;
 }
 
 .dv-spotlight-event-detail .actions.special {
-	display: flex;
-	justify-content: center;
+  display: flex;
+  justify-content: center;
 }
 
 /* Détail événement centré : miniature ronde au-dessus du titre. */
 .dv-event-detail__thumb-wrap {
-	display: flex;
-	width: 6.2rem;
-	height: 6.2rem;
-	border-radius: 50%;
-	overflow: hidden;
-	margin: 0 auto 0.75rem;
-	background: rgba(67, 75, 86, 0.1);
+  display: flex;
+  width: 6.2rem;
+  height: 6.2rem;
+  border-radius: 50%;
+  overflow: hidden;
+  margin: 0 auto 0.75rem;
+  background: rgba(67, 75, 86, 0.1);
 }
 
 .dv-event-detail__thumb {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .dv-event-detail__thumb-wrap--empty {
-	background: rgba(67, 75, 86, 0.14);
+  background: rgba(67, 75, 86, 0.14);
 }
 
 /* Mobile/tablette : empilement simple pour lisibilité et interactions confortables. */
 @media screen and (max-width: 980px) {
-	.dv-index-rl-grid {
-		grid-template-columns: 1fr;
-		grid-template-areas:
-			'about'
-			'photo'
-			'calendar'
-			'detail';
-	}
+  .dv-index-rl-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'about'
+      'photo'
+      'calendar'
+      'detail';
+  }
 
-	.dv-index-rl__photo-top .image,
-	.dv-index-rl__calendar {
-		/* 1) But : garantir que l’image de fond du bloc calendrier reste plus haute que le calendrier overlay. */
-		/* 2) Variable clé : min-height augmentée sur mobile/tablette pour éviter le débord visuel. */
-		/* 3) Flux : le calendrier reste visuellement contenu dans son image support. */
-		min-height: 19.5rem;
-	}
+  .dv-index-rl__photo-top .image,
+  .dv-index-rl__calendar {
+    /* 1) But : garantir que l’image de fond du bloc calendrier reste plus haute que le calendrier overlay. */
+    /* 2) Variable clé : min-height augmentée sur mobile/tablette pour éviter le débord visuel. */
+    /* 3) Flux : le calendrier reste visuellement contenu dans son image support. */
+    min-height: 19.5rem;
+  }
 }
 
 /* ——— Galerie : onglets ——— */
 .dv-gallery-tabs {
-	display: flex;
-	gap: 0.5rem;
-	flex-wrap: wrap;
-	margin: 1rem 0 1.5rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 1rem 0 1.5rem;
 }
 
 .dv-gallery-tabs button {
-	cursor: pointer;
+  cursor: pointer;
 }
 
 .dv-gallery-tabs button.is-active {
-	box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
 }
 
 /* ——— Admin : même largeur que l’index (.wrapper > .inner > .main), pas de max-width réduit ——— */
 .dv-admin {
-	max-width: none;
-	width: 100%;
-	margin: 0;
-	padding-top: 2.25rem;
-	padding-bottom: 0;
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding-top: 2.25rem;
+  padding-bottom: 0;
 }
 
 /*
@@ -1266,178 +1340,178 @@ html {
  * visible sous les sections colorées (articles / galerie / boutique).
  */
 .wrapper > .inner > .main.dv-admin {
-	padding-bottom: 0 !important;
+  padding-bottom: 0 !important;
 }
 
 /* Section dédiée : bandeau titre (accent1) + rangée 3 onglets (teal / vert / or du thème). */
 .dv-admin__masthead {
-	width: 100%;
-	margin: 0 0 0;
-	overflow: hidden;
-	border-radius: 0;
-	box-shadow: 0 2px 14px rgba(0, 0, 0, 0.06);
+  width: 100%;
+  margin: 0 0 0;
+  overflow: hidden;
+  border-radius: 0;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.06);
 }
 
 /* Bandeau titre : pleine largeur du .inner, fond accent1 comme les carrousels du site. */
 .dv-admin__masthead-title {
-	background-color: #575b72;
-	color: rgba(255, 255, 255, 0.92);
-	text-align: center;
-	padding: 2.15rem 1.5rem 1.65rem;
+  background-color: #575b72;
+  color: rgba(255, 255, 255, 0.92);
+  text-align: center;
+  padding: 2.15rem 1.5rem 1.65rem;
 }
 
 .dv-admin__masthead-title h1 {
-	margin: 0;
-	color: #ffffff;
-	font-size: clamp(1.35rem, 2.5vw, 1.85rem);
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.35rem, 2.5vw, 1.85rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 /* Grille 3 colonnes égales : chaque onglet occupe exactement un tiers ; pas de gouttière pour un ruban continu. */
 .dv-admin__masthead-tabs {
-	display: grid;
-	grid-template-columns: repeat(3, 1fr);
-	gap: 0;
-	margin: 0;
-	padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  margin: 0;
+  padding: 0;
 }
 
 /* Typo type bannière index ; le thème impose button { color: #434b56 !important } → il faut !important ici pour gagner. */
 .dv-admin__masthead-tabs .dv-admin__tab {
-	margin: 0;
-	padding: 1.65rem 0.85rem;
-	font-family: inherit;
-	font-size: clamp(1.05rem, 2.6vw, 1.75em);
-	font-weight: 500;
-	letter-spacing: 0.1em;
-	line-height: 1.35 !important;
-	text-transform: uppercase;
-	border: none;
-	border-radius: 0 !important;
-	cursor: pointer;
-	color: #ffffff !important;
-	-webkit-appearance: none !important;
-	appearance: none !important;
-	box-shadow: none !important;
-	height: auto !important;
-	min-height: 0 !important;
-	white-space: normal !important;
-	text-shadow: 0 0.06em 0.22em rgba(0, 0, 0, 0.22);
-	transition:
-		filter 0.15s ease,
-		box-shadow 0.15s ease,
-		opacity 0.15s ease;
+  margin: 0;
+  padding: 1.65rem 0.85rem;
+  font-family: inherit;
+  font-size: clamp(1.05rem, 2.6vw, 1.75em);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  line-height: 1.35 !important;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 0 !important;
+  cursor: pointer;
+  color: #ffffff !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  box-shadow: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  white-space: normal !important;
+  text-shadow: 0 0.06em 0.22em rgba(0, 0, 0, 0.22);
+  transition:
+    filter 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
 }
 
 /* Fonds : mêmes teintes que les blocs « Boutique » (accent2) et « Fil d’actualités » (accent3) + accent4 pour la 3e colonne. */
 .dv-admin__masthead-tabs .dv-admin__tab--articles {
-	background-color: #4cabb1;
+  background-color: #4cabb1;
 }
 
 .dv-admin__masthead-tabs .dv-admin__tab--gallery {
-	background-color: #69c7ad;
+  background-color: #69c7ad;
 }
 
 .dv-admin__masthead-tabs .dv-admin__tab--shop {
-	background-color: #fed586;
+  background-color: #fed586;
 }
 
 /* Inactif : léger assombrissement ; actif : barre inférieure pour marquer la sélection. */
 .dv-admin__masthead-tabs .dv-admin__tab:not(.is-active) {
-	filter: brightness(0.94);
-	opacity: 0.88;
+  filter: brightness(0.94);
+  opacity: 0.88;
 }
 
 /* :hover / :active du thème ajoutent un fond gris sur tous les button — on réapplique la teinte de chaque onglet avec !important. */
 .dv-admin__masthead-tabs .dv-admin__tab:hover,
 .dv-admin__masthead-tabs .dv-admin__tab:active,
 .dv-admin__masthead-tabs .dv-admin__tab:focus-visible {
-	color: #ffffff !important;
+  color: #ffffff !important;
 }
 
 .dv-admin__masthead-tabs .dv-admin__tab--articles:hover,
 .dv-admin__masthead-tabs .dv-admin__tab--articles:active {
-	background-color: #4cabb1 !important;
+  background-color: #4cabb1 !important;
 }
 
 .dv-admin__masthead-tabs .dv-admin__tab--gallery:hover,
 .dv-admin__masthead-tabs .dv-admin__tab--gallery:active {
-	background-color: #69c7ad !important;
+  background-color: #69c7ad !important;
 }
 
 .dv-admin__masthead-tabs .dv-admin__tab--shop:hover,
 .dv-admin__masthead-tabs .dv-admin__tab--shop:active {
-	background-color: #fed586 !important;
+  background-color: #fed586 !important;
 }
 
 .dv-admin__masthead-tabs .dv-admin__tab:hover {
-	filter: brightness(1);
-	opacity: 1;
+  filter: brightness(1);
+  opacity: 1;
 }
 
 .dv-admin__masthead-tabs .dv-admin__tab.is-active {
-	filter: brightness(1);
-	opacity: 1;
-	box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.22) !important;
+  filter: brightness(1);
+  opacity: 1;
+  box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.22) !important;
 }
 
 .dv-admin__panel {
-	display: none;
+  display: none;
 }
 
 .dv-admin__panel.is-active {
-	display: block;
+  display: block;
 }
 
 .dv-admin__panel-title {
-	font-size: 1.08rem;
-	margin: 0 0 1.1rem;
-	padding-bottom: 0.55rem;
-	border-bottom: 2px solid rgba(67, 75, 86, 0.12);
-	font-weight: 700;
-	letter-spacing: 0.02em;
+  font-size: 1.08rem;
+  margin: 0 0 1.1rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 2px solid rgba(67, 75, 86, 0.12);
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .dv-admin__section-label {
-	font-size: 0.72rem;
-	text-transform: uppercase;
-	letter-spacing: 0.1em;
-	margin: 1.35rem 0 0.5rem;
-	color: rgba(67, 75, 86, 0.65);
-	font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 1.35rem 0 0.5rem;
+  color: rgba(67, 75, 86, 0.65);
+  font-weight: 700;
 }
 
 /* Section événement : titre + checkbox compacte juste à côté. */
 .dv-admin__section-head {
-	display: flex;
-	align-items: center;
-	justify-content: flex-start;
-	gap: 0.5rem;
-	flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .dv-admin__section-head .dv-admin__section-label {
-	margin: 1.35rem 0 0.35rem;
+  margin: 1.35rem 0 0.35rem;
 }
 
 .dv-admin__check-inline {
-	margin-top: 0.95rem;
+  margin-top: 0.95rem;
 }
 
 /* Checkbox événement : affichage explicite (le thème masque par défaut les checkboxes natives). */
 .dv-admin__check-inline #article-is-event {
-	-moz-appearance: auto !important;
-	-webkit-appearance: checkbox !important;
-	appearance: auto !important;
-	display: inline-block !important;
-	float: none !important;
-	opacity: 1 !important;
-	width: 1.06rem !important;
-	height: 1.06rem !important;
-	margin: 0 !important;
-	z-index: auto !important;
-	accent-color: #575b72;
+  -moz-appearance: auto !important;
+  -webkit-appearance: checkbox !important;
+  appearance: auto !important;
+  display: inline-block !important;
+  float: none !important;
+  opacity: 1 !important;
+  width: 1.06rem !important;
+  height: 1.06rem !important;
+  margin: 0 !important;
+  z-index: auto !important;
+  accent-color: #575b72;
 }
 
 /*
@@ -1445,40 +1519,40 @@ html {
  * Variables : max-height élevé pour couvrir le contenu ; `is-open` piloté par JS.
  */
 .dv-admin__event-fields {
-	max-height: 0;
-	opacity: 0;
-	transform: translateY(-0.2rem);
-	overflow: hidden;
-	pointer-events: none;
-	transition:
-		max-height 0.32s ease,
-		opacity 0.24s ease,
-		transform 0.24s ease;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-0.2rem);
+  overflow: hidden;
+  pointer-events: none;
+  transition:
+    max-height 0.32s ease,
+    opacity 0.24s ease,
+    transform 0.24s ease;
 }
 
 .dv-admin__event-fields.is-open {
-	max-height: 36rem;
-	opacity: 1;
-	transform: translateY(0);
-	pointer-events: auto;
+  max-height: 36rem;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
 .dv-admin__divider {
-	height: 1px;
-	background: rgba(67, 75, 86, 0.12);
-	margin: 1.35rem 0;
-	border: none;
+  height: 1px;
+  background: rgba(67, 75, 86, 0.12);
+  margin: 1.35rem 0;
+  border: none;
 }
 
 /* Onglet Articles : édition au-dessus, liste en dessous (pleine largeur). */
 .dv-admin__articles-layout {
-	display: flex;
-	flex-direction: column;
-	gap: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
 }
 
 .dv-admin__block--edit .dv-admin__form-column {
-	max-width: none;
+  max-width: none;
 }
 
 /*
@@ -1486,124 +1560,124 @@ html {
  * Marges négatives = annulent le padding horizontal du .main (6em / 5em / 2em / 1.5em selon breakpoints du thème).
  */
 .dv-admin__articles-list-band {
-	background-color: #4cabb1;
-	color: rgba(255, 255, 255, 0.75);
-	margin-left: -6em;
-	margin-right: -6em;
-	margin-bottom: 0;
-	padding: 3em 6em 4em;
-	border-radius: 0;
-	box-shadow: none;
+  background-color: #4cabb1;
+  color: rgba(255, 255, 255, 0.75);
+  margin-left: -6em;
+  margin-right: -6em;
+  margin-bottom: 0;
+  padding: 3em 6em 4em;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 @media screen and (max-width: 1680px) {
-	.dv-admin__articles-list-band {
-		margin-left: -5em;
-		margin-right: -5em;
-		padding: 3em 5em 3.5em;
-	}
+  .dv-admin__articles-list-band {
+    margin-left: -5em;
+    margin-right: -5em;
+    padding: 3em 5em 3.5em;
+  }
 }
 
 @media screen and (max-width: 736px) {
-	.dv-admin__articles-list-band {
-		margin-left: -2em;
-		margin-right: -2em;
-		padding: 2.5em 2em 3em;
-	}
+  .dv-admin__articles-list-band {
+    margin-left: -2em;
+    margin-right: -2em;
+    padding: 2.5em 2em 3em;
+  }
 }
 
 @media screen and (max-width: 480px) {
-	.dv-admin__articles-list-band {
-		margin-left: -1.5em;
-		margin-right: -1.5em;
-		padding: 2.25em 1.5em 2.75em;
-	}
+  .dv-admin__articles-list-band {
+    margin-left: -1.5em;
+    margin-right: -1.5em;
+    padding: 2.25em 1.5em 2.75em;
+  }
 }
 
 .dv-admin__articles-list-head {
-	text-align: center;
+  text-align: center;
 }
 
 .dv-admin__articles-list-head h2 {
-	color: #ffffff;
-	font-size: 1.35rem;
-	letter-spacing: 0.12em;
-	text-transform: uppercase;
-	margin: 0 0 0.35em;
+  color: #ffffff;
+  font-size: 1.35rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 0.35em;
 }
 
 .dv-admin__articles-list-head p {
-	color: rgba(255, 255, 255, 0.78);
-	margin: 0 auto 2em;
-	max-width: 36em;
-	line-height: 1.55;
-	font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.78);
+  margin: 0 auto 2em;
+  max-width: 36em;
+  line-height: 1.55;
+  font-size: 0.95rem;
 }
 
 .dv-admin__articles-list-band .dv-admin-list--articles {
-	max-height: min(38vh, 400px);
-	margin: 0 0 1.75rem;
-	width: 100%;
-	border: none;
-	border-radius: 0;
-	background: transparent;
-	box-shadow: none;
-	overflow-y: auto;
-	-webkit-overflow-scrolling: touch;
+  max-height: min(38vh, 400px);
+  margin: 0 0 1.75rem;
+  width: 100%;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .dv-admin__articles-list-band .dv-admin-list--articles li {
-	border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-	background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  background: transparent;
 }
 
 .dv-admin__articles-list-band .dv-admin-list--articles li:last-child {
-	border-bottom: none;
+  border-bottom: none;
 }
 
 .dv-admin__articles-list-band .dv-admin-list--articles li:hover {
-	background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .dv-admin__articles-list-band .dv-admin-list--articles li span:first-child {
-	color: #ffffff;
-	font-weight: 500;
+  color: #ffffff;
+  font-weight: 500;
 }
 
 .dv-admin__articles-list-band .button {
-	background-color: transparent;
-	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
-	color: #ffffff !important;
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  color: #ffffff !important;
 }
 
 .dv-admin__articles-list-band .button:hover {
-	background-color: rgba(255, 255, 255, 0.06);
+  background-color: rgba(255, 255, 255, 0.06);
 }
 
 .dv-admin__articles-list-band .button:active {
-	background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .dv-admin__articles-list-band .button.primary {
-	box-shadow: 0 0 3em 0 rgba(0, 0, 0, 0.1);
-	background-color: #5ab7bd;
-	border: none;
-	color: #ffffff !important;
+  box-shadow: 0 0 3em 0 rgba(0, 0, 0, 0.1);
+  background-color: #5ab7bd;
+  border: none;
+  color: #ffffff !important;
 }
 
 .dv-admin__articles-list-band .button.primary:hover {
-	background-color: #6cbfc4;
+  background-color: #6cbfc4;
 }
 
 .dv-admin__articles-list-band .button.primary:active {
-	background-color: #7cc8cd;
+  background-color: #7cc8cd;
 }
 
 /* Onglet Boutique : formulaire au-dessus, liste en bandeau jaune en dessous (même logique que l’onglet Articles). */
 .dv-admin__products-layout {
-	display: flex;
-	flex-direction: column;
-	gap: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
 }
 
 /*
@@ -1611,122 +1685,122 @@ html {
  * Variables clés : mêmes paliers responsive que le bandeau articles (6em/5em/2em/1.5em).
  */
 .dv-admin__products-list-band {
-	background-color: #fed586;
-	color: rgba(67, 75, 86, 0.86);
-	margin-left: -6em;
-	margin-right: -6em;
-	margin-bottom: 0;
-	padding: 3em 6em 3.5em;
-	border-radius: 0;
-	box-shadow: none;
+  background-color: #fed586;
+  color: rgba(67, 75, 86, 0.86);
+  margin-left: -6em;
+  margin-right: -6em;
+  margin-bottom: 0;
+  padding: 3em 6em 3.5em;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 @media screen and (max-width: 1680px) {
-	.dv-admin__products-list-band {
-		margin-left: -5em;
-		margin-right: -5em;
-		padding: 3em 5em 3.25em;
-	}
+  .dv-admin__products-list-band {
+    margin-left: -5em;
+    margin-right: -5em;
+    padding: 3em 5em 3.25em;
+  }
 }
 
 @media screen and (max-width: 736px) {
-	.dv-admin__products-list-band {
-		margin-left: -2em;
-		margin-right: -2em;
-		padding: 2.5em 2em 2.85em;
-	}
+  .dv-admin__products-list-band {
+    margin-left: -2em;
+    margin-right: -2em;
+    padding: 2.5em 2em 2.85em;
+  }
 }
 
 @media screen and (max-width: 480px) {
-	.dv-admin__products-list-band {
-		margin-left: -1.5em;
-		margin-right: -1.5em;
-		padding: 2.25em 1.5em 2.6em;
-	}
+  .dv-admin__products-list-band {
+    margin-left: -1.5em;
+    margin-right: -1.5em;
+    padding: 2.25em 1.5em 2.6em;
+  }
 }
 
 .dv-admin__products-list-head {
-	text-align: center;
+  text-align: center;
 }
 
 .dv-admin__products-list-head h2 {
-	color: #434b56;
-	font-size: 1.35rem;
-	letter-spacing: 0.12em;
-	text-transform: uppercase;
-	margin: 0 0 0.35em;
+  color: #434b56;
+  font-size: 1.35rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 0.35em;
 }
 
 .dv-admin__products-list-head p {
-	color: rgba(67, 75, 86, 0.82);
-	margin: 0 auto 1.8em;
-	max-width: 39em;
-	line-height: 1.55;
-	font-size: 0.95rem;
+  color: rgba(67, 75, 86, 0.82);
+  margin: 0 auto 1.8em;
+  max-width: 39em;
+  line-height: 1.55;
+  font-size: 0.95rem;
 }
 
 .dv-admin__products-list-band .dv-admin-list--products {
-	max-height: min(38vh, 420px);
-	margin: 0 0 1.4rem;
-	width: 100%;
-	border: none;
-	border-radius: 0;
-	background: transparent;
-	box-shadow: none;
-	overflow-y: auto;
-	-webkit-overflow-scrolling: touch;
+  max-height: min(38vh, 420px);
+  margin: 0 0 1.4rem;
+  width: 100%;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .dv-admin__products-list-band .dv-admin-list--products li {
-	border-bottom: 1px solid rgba(67, 75, 86, 0.2);
-	background: transparent;
+  border-bottom: 1px solid rgba(67, 75, 86, 0.2);
+  background: transparent;
 }
 
 .dv-admin__products-list-band .dv-admin-list--products li:last-child {
-	border-bottom: none;
+  border-bottom: none;
 }
 
 .dv-admin__products-list-band .dv-admin-list--products li:hover {
-	background: rgba(67, 75, 86, 0.07);
+  background: rgba(67, 75, 86, 0.07);
 }
 
 .dv-admin__products-list-band .dv-admin-list--products li span:first-child {
-	color: #434b56;
-	font-weight: 600;
+  color: #434b56;
+  font-weight: 600;
 }
 
 .dv-admin__products-list-cta {
-	display: flex;
-	justify-content: center;
+  display: flex;
+  justify-content: center;
 }
 
 .dv-admin__products-list-band .button {
-	background-color: transparent;
-	box-shadow: inset 0 0 0 1px rgba(67, 75, 86, 0.3);
-	color: #434b56 !important;
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1px rgba(67, 75, 86, 0.3);
+  color: #434b56 !important;
 }
 
 .dv-admin__products-list-band .button:hover {
-	background-color: rgba(67, 75, 86, 0.08);
+  background-color: rgba(67, 75, 86, 0.08);
 }
 
 .dv-admin__products-list-band .button:active {
-	background-color: rgba(67, 75, 86, 0.14);
+  background-color: rgba(67, 75, 86, 0.14);
 }
 
 .dv-admin__products-list-band .button.primary {
-	background-color: #575b72;
-	box-shadow: 0 0 3em 0 rgba(0, 0, 0, 0.1);
-	color: #ffffff !important;
-	border: none;
+  background-color: #575b72;
+  box-shadow: 0 0 3em 0 rgba(0, 0, 0, 0.1);
+  color: #ffffff !important;
+  border: none;
 }
 
 .dv-admin__products-list-band .button.primary:hover {
-	background-color: #626780;
+  background-color: #626780;
 }
 
 .dv-admin__products-list-band .button.primary:active {
-	background-color: #757ca0;
+  background-color: #757ca0;
 }
 
 /*
@@ -1734,119 +1808,119 @@ html {
  * Couleur clé : accent3 (#69c7ad) pour distinguer visuellement la partie "galerie fixe".
  */
 .dv-admin__gallery-add-band {
-	background-color: #69c7ad;
-	color: rgba(255, 255, 255, 0.82);
-	margin-top: 1.5rem;
-	margin-left: -6em;
-	margin-right: -6em;
-	margin-bottom: 0;
-	padding: 2.35em 6em 2.75em;
-	border-radius: 0;
+  background-color: #69c7ad;
+  color: rgba(255, 255, 255, 0.82);
+  margin-top: 1.5rem;
+  margin-left: -6em;
+  margin-right: -6em;
+  margin-bottom: 0;
+  padding: 2.35em 6em 2.75em;
+  border-radius: 0;
 }
 
 @media screen and (max-width: 1680px) {
-	.dv-admin__gallery-add-band {
-		margin-left: -5em;
-		margin-right: -5em;
-		padding: 2.2em 5em 2.55em;
-	}
+  .dv-admin__gallery-add-band {
+    margin-left: -5em;
+    margin-right: -5em;
+    padding: 2.2em 5em 2.55em;
+  }
 }
 
 @media screen and (max-width: 736px) {
-	.dv-admin__gallery-add-band {
-		margin-left: -2em;
-		margin-right: -2em;
-		padding: 2em 2em 2.35em;
-	}
+  .dv-admin__gallery-add-band {
+    margin-left: -2em;
+    margin-right: -2em;
+    padding: 2em 2em 2.35em;
+  }
 }
 
 @media screen and (max-width: 480px) {
-	.dv-admin__gallery-add-band {
-		margin-left: -1.5em;
-		margin-right: -1.5em;
-		padding: 1.8em 1.5em 2.1em;
-	}
+  .dv-admin__gallery-add-band {
+    margin-left: -1.5em;
+    margin-right: -1.5em;
+    padding: 1.8em 1.5em 2.1em;
+  }
 }
 
 .dv-admin__gallery-add-head {
-	text-align: center;
+  text-align: center;
 }
 
 .dv-admin__gallery-add-head h3 {
-	color: #ffffff;
-	font-size: 1.15rem;
-	letter-spacing: 0.09em;
-	text-transform: uppercase;
-	margin: 0 0 0.45em;
+  color: #ffffff;
+  font-size: 1.15rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  margin: 0 0 0.45em;
 }
 
 .dv-admin__gallery-add-head p {
-	color: rgba(255, 255, 255, 0.78);
-	margin: 0 auto 1.35em;
-	max-width: 40em;
-	line-height: 1.5;
-	font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.78);
+  margin: 0 auto 1.35em;
+  max-width: 40em;
+  line-height: 1.5;
+  font-size: 0.92rem;
 }
 
 .dv-admin__gallery-add-band .dv-admin__add-media-row {
-	padding: 0;
-	background: transparent;
-	border: none;
-	border-radius: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
 }
 
 .dv-admin__gallery-add-band .dv-admin__field {
-	margin-bottom: 0;
+  margin-bottom: 0;
 }
 
 .dv-admin__gallery-add-band .dv-admin__field label {
-	color: rgba(255, 255, 255, 0.95);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .dv-admin__gallery-add-band .button {
-	background-color: transparent;
-	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.42);
-	color: #ffffff !important;
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.42);
+  color: #ffffff !important;
 }
 
 .dv-admin__gallery-add-band .button:hover {
-	background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .dv-admin__gallery-add-band .button:active {
-	background-color: rgba(255, 255, 255, 0.16);
+  background-color: rgba(255, 255, 255, 0.16);
 }
 
 .dv-admin__split {
-	display: grid;
-	grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
-	gap: 2rem;
-	align-items: start;
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+  gap: 2rem;
+  align-items: start;
 }
 
 @media screen and (max-width: 980px) {
-	.dv-admin__split {
-		grid-template-columns: 1fr;
-	}
+  .dv-admin__split {
+    grid-template-columns: 1fr;
+  }
 }
 
 .dv-admin__aside {
-	position: sticky;
-	top: 0.75rem;
+  position: sticky;
+  top: 0.75rem;
 }
 
 @media screen and (max-width: 980px) {
-	.dv-admin__aside {
-		position: static;
-	}
+  .dv-admin__aside {
+    position: static;
+  }
 }
 
 .dv-admin__form-column {
-	min-width: 0;
+  min-width: 0;
 }
 
 .dv-admin__field {
-	margin-bottom: 1rem;
+  margin-bottom: 1rem;
 }
 
 .dv-admin__field input[type='text'],
@@ -1856,22 +1930,22 @@ html {
 .dv-admin__field input[type='time'],
 .dv-admin__field select,
 .dv-admin__field textarea {
-	width: 100%;
-	max-width: 100%;
-	box-sizing: border-box;
-	padding: 0.55rem 0.75rem;
-	border: 1px solid rgba(67, 75, 86, 0.22);
-	border-radius: 6px;
-	background: #fff;
-	color: #434b56;
-	font-family: inherit;
-	font-size: 0.95rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid rgba(67, 75, 86, 0.22);
+  border-radius: 6px;
+  background: #fff;
+  color: #434b56;
+  font-family: inherit;
+  font-size: 0.95rem;
 }
 
 .dv-admin__field textarea {
-	resize: vertical;
-	min-height: 5.5rem;
-	line-height: 1.45;
+  resize: vertical;
+  min-height: 5.5rem;
+  line-height: 1.45;
 }
 
 /* Focus homogène sur tous les champs (liens inclus), sans rupture visuelle. */
@@ -1882,119 +1956,119 @@ html {
 .dv-admin__field input[type='time']:focus,
 .dv-admin__field select:focus,
 .dv-admin__field textarea:focus {
-	border-color: rgba(67, 75, 86, 0.45);
-	box-shadow: 0 0 0 1px rgba(67, 75, 86, 0.2);
+  border-color: rgba(67, 75, 86, 0.45);
+  box-shadow: 0 0 0 1px rgba(67, 75, 86, 0.2);
 }
 
 .dv-admin__field--check {
-	margin-bottom: 0.6rem;
+  margin-bottom: 0.6rem;
 }
 
 .dv-admin__field--check input[type='checkbox'] + label {
-	font-size: 0.95rem;
+  font-size: 0.95rem;
 }
 
 .dv-admin__grid-2 {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 0 1rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 1rem;
 }
 
 /* Événement : 4 champs sur une ligne (date/heure début + date/heure fin). */
 .dv-admin__grid-4 {
-	display: grid;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
-	gap: 0 1rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0 1rem;
 }
 
 @media screen and (max-width: 736px) {
-	.dv-admin__grid-2 {
-		grid-template-columns: 1fr;
-	}
+  .dv-admin__grid-2 {
+    grid-template-columns: 1fr;
+  }
 
-	.dv-admin__grid-4 {
-		grid-template-columns: 1fr;
-	}
+  .dv-admin__grid-4 {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media screen and (max-width: 1200px) and (min-width: 737px) {
-	.dv-admin__grid-4 {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
+  .dv-admin__grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .dv-admin__field--grow {
-	flex: 1 1 12rem;
-	min-width: 0;
+  flex: 1 1 12rem;
+  min-width: 0;
 }
 
 .dv-admin__field--action {
-	flex: 0 0 auto;
-	align-self: flex-end;
+  flex: 0 0 auto;
+  align-self: flex-end;
 }
 
 .dv-admin__fake-label {
-	display: block;
-	font-size: 0.75rem;
-	height: 1.15em;
+  display: block;
+  font-size: 0.75rem;
+  height: 1.15em;
 }
 
 .dv-admin__fullwidth {
-	width: 100%;
-	box-sizing: border-box;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .dv-admin__actions {
-	margin-top: 1.65rem;
-	padding-top: 1.15rem;
-	border-top: 1px solid rgba(67, 75, 86, 0.1);
+  margin-top: 1.65rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid rgba(67, 75, 86, 0.1);
 }
 
 .dv-admin__quill-wrap {
-	/* 1) But : encadrer l’éditeur complet comme les autres champs du formulaire. */
-	/* 2) Variables visuelles : bordure neutre + fond blanc + rayon cohérent. */
-	/* 3) Flux UX : au focus interne, la bordure passe en accent pour signaler le champ actif. */
-	background: #ffffff;
-	border-radius: 8px;
-	overflow: hidden;
-	border: 1px solid rgba(67, 75, 86, 0.22);
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  /* 1) But : encadrer l’éditeur complet comme les autres champs du formulaire. */
+  /* 2) Variables visuelles : bordure neutre + fond blanc + rayon cohérent. */
+  /* 3) Flux UX : au focus interne, la bordure passe en accent pour signaler le champ actif. */
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(67, 75, 86, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .dv-admin__quill-wrap:focus-within {
-	border-color: #4cabb1;
-	box-shadow: 0 0 0 1px rgba(76, 171, 177, 0.28);
+  border-color: #4cabb1;
+  box-shadow: 0 0 0 1px rgba(76, 171, 177, 0.28);
 }
 
 .dv-admin__toolbar {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: flex-end;
-	gap: 1rem 1.25rem;
-	margin-bottom: 1.25rem;
-	padding: 1rem 1.1rem;
-	background: rgba(67, 75, 86, 0.04);
-	border-radius: 8px;
-	border: 1px solid rgba(67, 75, 86, 0.08);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.1rem;
+  background: rgba(67, 75, 86, 0.04);
+  border-radius: 8px;
+  border: 1px solid rgba(67, 75, 86, 0.08);
 }
 
 .dv-admin__toolbar .dv-admin__field {
-	/* 1) But : éviter le décalage vertical causé par la marge globale des champs. */
-	/* 2) Variable clé : la toolbar gère déjà ses espacements via gap/padding. */
-	/* 3) Flux : "Album actif" s’aligne visuellement avec les boutons à droite. */
-	margin-bottom: 0;
+  /* 1) But : éviter le décalage vertical causé par la marge globale des champs. */
+  /* 2) Variable clé : la toolbar gère déjà ses espacements via gap/padding. */
+  /* 3) Flux : "Album actif" s’aligne visuellement avec les boutons à droite. */
+  margin-bottom: 0;
 }
 
 .dv-admin__toolbar-btns {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.45rem;
-	align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
 }
 
 .dv-admin__gallery-items {
-	min-height: 3rem;
-	margin-bottom: 0.35rem;
+  min-height: 3rem;
+  margin-bottom: 0.35rem;
 }
 
 /*
@@ -2004,153 +2078,153 @@ html {
  * 3) Flux : glisser la ligne entière sauf sur le bouton (Sortable filter côté JS).
  */
 .dv-admin__sortable-list--gallery li.dv-admin__gitem-li {
-	align-items: stretch;
-	padding: 0.55rem 0.75rem;
-	min-height: 5.25rem;
-	width: 100%;
+  align-items: stretch;
+  padding: 0.55rem 0.75rem;
+  min-height: 5.25rem;
+  width: 100%;
 }
 
 .dv-admin__sortable-list--gallery li.dv-admin__gitem-li .dv-admin__gitem-row {
-	flex: 1 1 0%;
-	min-width: 0;
+  flex: 1 1 0%;
+  min-width: 0;
 }
 
 .dv-admin__gitem-row {
-	display: flex;
-	align-items: center;
-	gap: 0.85rem;
-	min-width: 0;
-	width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+  width: 100%;
 }
 
 .dv-admin__gitem-thumb-wrap {
-	flex: 0 0 auto;
-	width: 4.5rem;
-	height: 4.5rem;
-	border-radius: 6px;
-	overflow: hidden;
-	background: rgba(67, 75, 86, 0.07);
-	border: 1px solid rgba(67, 75, 86, 0.14);
+  flex: 0 0 auto;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(67, 75, 86, 0.07);
+  border: 1px solid rgba(67, 75, 86, 0.14);
 }
 
 .dv-admin__gitem-thumb {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .dv-admin__gitem-thumb--video {
-	background: #000;
+  background: #000;
 }
 
 .dv-admin__gitem-thumb-placeholder {
-	width: 100%;
-	height: 100%;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 1.1rem;
-	color: rgba(67, 75, 86, 0.45);
-	font-weight: 600;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: rgba(67, 75, 86, 0.45);
+  font-weight: 600;
 }
 
 .dv-admin__gitem-meta {
-	flex: 1 1 auto;
-	min-width: 0;
-	display: flex;
-	flex-direction: column;
-	gap: 0.2rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
 .dv-admin__gitem-type {
-	font-size: 0.7rem;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.07em;
-	color: rgba(67, 75, 86, 0.55);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: rgba(67, 75, 86, 0.55);
 }
 
 .dv-admin__gitem-cap {
-	margin: 0;
-	font-size: 0.88rem;
-	line-height: 1.35;
-	color: #434b56;
-	overflow: hidden;
-	display: -webkit-box;
-	-webkit-box-orient: vertical;
-	-webkit-line-clamp: 2;
-	line-clamp: 2;
-	word-break: break-word;
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.35;
+  color: #434b56;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  word-break: break-word;
 }
 
 .dv-admin__gitem-actions {
-	flex: 0 0 auto;
-	align-self: center;
+  flex: 0 0 auto;
+  align-self: center;
 }
 
 @media screen and (max-width: 480px) {
-	.dv-admin__gitem-row {
-		flex-wrap: wrap;
-	}
+  .dv-admin__gitem-row {
+    flex-wrap: wrap;
+  }
 
-	.dv-admin__gitem-actions {
-		width: 100%;
-		display: flex;
-		justify-content: flex-end;
-	}
+  .dv-admin__gitem-actions {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
 }
 
 .dv-admin__add-media-row {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: flex-end;
-	gap: 1rem;
-	padding: 1rem 1.1rem;
-	background: rgba(67, 75, 86, 0.04);
-	border-radius: 8px;
-	border: 1px solid rgba(67, 75, 86, 0.08);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  background: rgba(67, 75, 86, 0.04);
+  border-radius: 8px;
+  border: 1px solid rgba(67, 75, 86, 0.08);
 }
 
 .dv-admin__extra-media {
-	display: flex;
-	flex-direction: column;
-	gap: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
 }
 
 .dv-admin__extra-row {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: flex-start;
-	gap: 0.5rem 0.65rem;
-	padding: 0.65rem 0.75rem;
-	background: rgba(67, 75, 86, 0.04);
-	border: 1px solid rgba(67, 75, 86, 0.1);
-	border-radius: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.5rem 0.65rem;
+  padding: 0.65rem 0.75rem;
+  background: rgba(67, 75, 86, 0.04);
+  border: 1px solid rgba(67, 75, 86, 0.1);
+  border-radius: 6px;
 }
 
 .dv-admin__extra-row .extra-source-mode {
-	flex: 0 0 8.5rem;
-	width: 8.5rem;
+  flex: 0 0 8.5rem;
+  width: 8.5rem;
 }
 
 .dv-admin__extra-row .extra-url-wrap,
 .dv-admin__extra-row .extra-file-wrap {
-	flex: 1 1 16rem;
-	min-width: 0;
+  flex: 1 1 16rem;
+  min-width: 0;
 }
 
 .dv-admin__extra-row .extra-url {
-	width: 100%;
+  width: 100%;
 }
 
 .dv-admin__extra-row .extra-file {
-	width: 100%;
+  width: 100%;
 }
 
 .dv-admin__extra-row .extra-type {
-	flex: 0 0 9rem;
-	width: 9rem;
+  flex: 0 0 9rem;
+  width: 9rem;
 }
 
 /* 1) But : rendre "Lien" et "Image/Vidéo" strictement identiques aux champs admin standards. */
@@ -2160,14 +2234,14 @@ html {
 .dv-admin__extra-row .extra-url,
 .dv-admin__extra-row .extra-type,
 .dv-admin__extra-row .extra-cap {
-	box-sizing: border-box;
-	padding: 0.55rem 0.75rem;
-	border: 1px solid rgba(67, 75, 86, 0.22);
-	border-radius: 6px;
-	background: #fff;
-	color: #434b56;
-	font-family: inherit;
-	font-size: 0.95rem;
+  box-sizing: border-box;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid rgba(67, 75, 86, 0.22);
+  border-radius: 6px;
+  background: #fff;
+  color: #434b56;
+  font-family: inherit;
+  font-size: 0.95rem;
 }
 
 /* 1) But : aligner aussi l’état focus avec les autres champs du formulaire admin. */
@@ -2177,345 +2251,345 @@ html {
 .dv-admin__extra-row .extra-url:focus,
 .dv-admin__extra-row .extra-type:focus,
 .dv-admin__extra-row .extra-cap:focus {
-	border-color: rgba(67, 75, 86, 0.45);
-	box-shadow: 0 0 0 1px rgba(67, 75, 86, 0.2);
+  border-color: rgba(67, 75, 86, 0.45);
+  box-shadow: 0 0 0 1px rgba(67, 75, 86, 0.2);
 }
 
 .dv-admin__extra-row .extra-cap {
-	/* 1) But : placer "Légende" sur la seconde ligne avec le bouton à droite. */
-	/* 2) Variables clés : base large + largeur auto pour ne pas éjecter le bouton dessous. */
-	/* 3) Flux : ligne 2 = [Légende.................][Supprimer le média]. */
-	flex: 1 1 24rem;
-	width: auto;
-	min-width: 14rem;
+  /* 1) But : placer "Légende" sur la seconde ligne avec le bouton à droite. */
+  /* 2) Variables clés : base large + largeur auto pour ne pas éjecter le bouton dessous. */
+  /* 3) Flux : ligne 2 = [Légende.................][Supprimer le média]. */
+  flex: 1 1 24rem;
+  width: auto;
+  min-width: 14rem;
 }
 
 .dv-admin__extra-row .extra-rm {
-	/* 1) But : garder l’action de suppression sur la même ligne que la légende. */
-	/* 2) Variable clé : bloc non compressible, aligné à droite de la ligne. */
-	/* 3) Flux : si manque de place, la légende se réduit avant de passer en colonne. */
-	flex: 0 0 auto;
-	align-self: center;
+  /* 1) But : garder l’action de suppression sur la même ligne que la légende. */
+  /* 2) Variable clé : bloc non compressible, aligné à droite de la ligne. */
+  /* 3) Flux : si manque de place, la légende se réduit avant de passer en colonne. */
+  flex: 0 0 auto;
+  align-self: center;
 }
 
 @media screen and (max-width: 736px) {
-	/* 1) But : sur mobile, éviter les champs trop serrés sur une seule ligne. */
-	/* 2) Variable clé : retour en empilement naturel. */
-	/* 3) Flux : meilleure accessibilité tactile. */
-	.dv-admin__extra-row .extra-source-mode,
-	.dv-admin__extra-row .extra-type,
-	.dv-admin__extra-row .extra-url-wrap,
-	.dv-admin__extra-row .extra-file-wrap,
-	.dv-admin__extra-row .extra-cap {
-		flex: 1 1 100%;
-		width: 100%;
-	}
+  /* 1) But : sur mobile, éviter les champs trop serrés sur une seule ligne. */
+  /* 2) Variable clé : retour en empilement naturel. */
+  /* 3) Flux : meilleure accessibilité tactile. */
+  .dv-admin__extra-row .extra-source-mode,
+  .dv-admin__extra-row .extra-type,
+  .dv-admin__extra-row .extra-url-wrap,
+  .dv-admin__extra-row .extra-file-wrap,
+  .dv-admin__extra-row .extra-cap {
+    flex: 1 1 100%;
+    width: 100%;
+  }
 }
 
 .dv-admin__form-column > .dv-hint {
-	margin-top: -0.25rem;
-	margin-bottom: 0.75rem;
+  margin-top: -0.25rem;
+  margin-bottom: 0.75rem;
 }
 
 .dv-admin__empty-msg {
-	margin: 0.5rem 0 1rem;
-	opacity: 0.8;
-	font-size: 0.92rem;
+  margin: 0.5rem 0 1rem;
+  opacity: 0.8;
+  font-size: 0.92rem;
 }
 
 .dv-admin__sortable-list {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-	border: 1px solid rgba(67, 75, 86, 0.15);
-	border-radius: 8px;
-	background: #fafbfc;
-	overflow: hidden;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid rgba(67, 75, 86, 0.15);
+  border-radius: 8px;
+  background: #fafbfc;
+  overflow: hidden;
 }
 
 .dv-admin__sortable-list li {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	gap: 0.65rem;
-	padding: 0.65rem 0.85rem;
-	border-bottom: 1px solid rgba(67, 75, 86, 0.08);
-	cursor: grab;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid rgba(67, 75, 86, 0.08);
+  cursor: grab;
 }
 
 .dv-admin__sortable-list li:last-child {
-	border-bottom: none;
+  border-bottom: none;
 }
 
 .dv-admin__sortable-list li:active {
-	cursor: grabbing;
+  cursor: grabbing;
 }
 
 .dv-admin__gitem-label {
-	font-size: 0.88rem;
-	word-break: break-all;
-	line-height: 1.35;
+  font-size: 0.88rem;
+  word-break: break-all;
+  line-height: 1.35;
 }
 
 .dv-admin-list {
-	list-style: none;
-	padding: 0;
-	margin: 0 0 1rem;
-	max-height: min(52vh, 520px);
-	overflow-y: auto;
-	border: 1px solid rgba(67, 75, 86, 0.15);
-	border-radius: 8px;
-	background: #fafbfc;
-	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  max-height: min(52vh, 520px);
+  overflow-y: auto;
+  border: 1px solid rgba(67, 75, 86, 0.15);
+  border-radius: 8px;
+  background: #fafbfc;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .dv-admin-list li {
-	padding: 0.72rem 0.9rem;
-	border-bottom: 1px solid rgba(67, 75, 86, 0.08);
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	gap: 0.5rem;
-	transition: background 0.12s ease;
+  padding: 0.72rem 0.9rem;
+  border-bottom: 1px solid rgba(67, 75, 86, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.12s ease;
 }
 
 .dv-admin-list li:hover {
-	background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.95);
 }
 
 .dv-admin-list li:last-child {
-	border-bottom: none;
+  border-bottom: none;
 }
 
 .dv-sortable-ghost {
-	opacity: 0.45;
+  opacity: 0.45;
 }
 
 /* Quill : fond clair cohérent avec le formulaire */
 .dv-admin .ql-toolbar {
-	background: #f5f6f8;
-	border-color: rgba(67, 75, 86, 0.18) !important;
-	border-radius: 0;
-	border-bottom: 1px solid rgba(67, 75, 86, 0.12) !important;
+  background: #f5f6f8;
+  border-color: rgba(67, 75, 86, 0.18) !important;
+  border-radius: 0;
+  border-bottom: 1px solid rgba(67, 75, 86, 0.12) !important;
 }
 
 .dv-admin .ql-container {
-	border: none !important;
-	border-top: 1px solid rgba(67, 75, 86, 0.12) !important;
-	border-radius: 0;
-	font-family: inherit;
-	min-height: 260px;
-	background: #fff;
-	color: #434b56;
+  border: none !important;
+  border-top: 1px solid rgba(67, 75, 86, 0.12) !important;
+  border-radius: 0;
+  font-family: inherit;
+  min-height: 260px;
+  background: #fff;
+  color: #434b56;
 }
 
 .dv-admin .ql-editor {
-	min-height: 260px;
-	line-height: 1.55;
+  min-height: 260px;
+  line-height: 1.55;
 }
 
 /* Images : pas de glisser-déposer natif (confond avec redimensionnement) ; ratio géré par width seul. */
 .dv-admin .ql-editor img {
-	max-width: 100%;
-	height: auto;
-	vertical-align: bottom;
-	-webkit-user-drag: none;
-	user-select: none;
+  max-width: 100%;
+  height: auto;
+  vertical-align: bottom;
+  -webkit-user-drag: none;
+  user-select: none;
 }
 
 /* Vidéos embed (YouTube / Vimeo) : 16:9 sans hauteur fixe — largeur via attribut width (admin). */
 .dv-admin .ql-editor iframe.ql-video {
-	max-width: 100%;
-	aspect-ratio: 16 / 9;
-	height: auto;
-	display: block;
-	border: 0;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  display: block;
+  border: 0;
 }
 
 /* Dialog choix Quill (Importer / Lien / Annuler). */
 .dv-admin-dialog {
-	position: fixed;
-	inset: 0;
-	background: rgba(30, 35, 45, 0.45);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	z-index: 22000;
-	padding: 1rem;
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 35, 45, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 22000;
+  padding: 1rem;
 }
 
 .dv-admin-dialog__panel {
-	width: min(100%, 32rem);
-	background: #ffffff;
-	border: 1px solid rgba(67, 75, 86, 0.2);
-	border-radius: 8px;
-	box-shadow: 0 0.8rem 2rem rgba(0, 0, 0, 0.2);
-	padding: 1rem 1rem 0.85rem;
+  width: min(100%, 32rem);
+  background: #ffffff;
+  border: 1px solid rgba(67, 75, 86, 0.2);
+  border-radius: 8px;
+  box-shadow: 0 0.8rem 2rem rgba(0, 0, 0, 0.2);
+  padding: 1rem 1rem 0.85rem;
 }
 
 .dv-admin-dialog__panel h4 {
-	margin: 0 0 0.35rem;
+  margin: 0 0 0.35rem;
 }
 
 .dv-admin-dialog__panel p {
-	margin: 0 0 0.8rem;
+  margin: 0 0 0.8rem;
 }
 
 .dv-admin-dialog__actions {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.5rem;
-	justify-content: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
 }
 
 /* Barre + poignée de redimensionnement images / iframes vidéo (js/app/admin/quill-media-resize.js). */
 .dv-admin__image-size-bar {
-	margin-top: 0.65rem;
-	padding: 0.75rem 1rem 0.85rem;
-	background: rgba(67, 75, 86, 0.06);
-	border: 1px solid rgba(67, 75, 86, 0.12);
-	border-radius: 8px;
+  margin-top: 0.65rem;
+  padding: 0.75rem 1rem 0.85rem;
+  background: rgba(67, 75, 86, 0.06);
+  border: 1px solid rgba(67, 75, 86, 0.12);
+  border-radius: 8px;
 }
 
 .dv-admin__image-size-bar__inner {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 0.75rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
 }
 
 .dv-admin__image-size-bar__label {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 0.5rem 0.75rem;
-	font-size: 0.85rem;
-	font-weight: 600;
-	color: #434b56;
-	margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #434b56;
+  margin: 0;
 }
 
 .dv-admin__image-size-bar__range {
-	width: min(220px, 55vw);
-	vertical-align: middle;
+  width: min(220px, 55vw);
+  vertical-align: middle;
 }
 
 .dv-admin__image-size-bar__pct {
-	min-width: 3.2em;
-	font-variant-numeric: tabular-nums;
+  min-width: 3.2em;
+  font-variant-numeric: tabular-nums;
 }
 
 .dv-admin__image-size-bar__hint {
-	margin: 0.55rem 0 0;
-	font-size: 0.78rem;
-	opacity: 0.72;
-	line-height: 1.4;
+  margin: 0.55rem 0 0;
+  font-size: 0.78rem;
+  opacity: 0.72;
+  line-height: 1.4;
 }
 
 .dv-admin__image-resize-handle {
-	position: fixed;
-	z-index: 12000;
-	width: 14px;
-	height: 14px;
-	padding: 0;
-	border: 2px solid #ffffff;
-	border-radius: 2px;
-	background: #4cabb1;
-	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
-	cursor: nwse-resize;
-	touch-action: none;
+  position: fixed;
+  z-index: 12000;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 2px solid #ffffff;
+  border-radius: 2px;
+  background: #4cabb1;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  cursor: nwse-resize;
+  touch-action: none;
 }
 
 .dv-hint {
-	font-size: 0.85rem;
-	opacity: 0.75;
-	margin-top: 0.35rem;
+  font-size: 0.85rem;
+  opacity: 0.75;
+  margin-top: 0.35rem;
 }
 
 /* Corps d’article : médias intégrés via Quill */
 .dv-article-body img,
 .dv-article-body video {
-	max-width: 100%;
-	height: auto;
+  max-width: 100%;
+  height: auto;
 }
 
 .dv-article-separator {
-	/* 1) But : créer une séparation claire entre l’en-tête (titre/description) et le corps. */
-	/* 2) Variables clés : trait fin + marge verticale confortable. */
-	/* 3) Flux : meilleure hiérarchie visuelle à l’ouverture d’un article. */
-	height: 1px;
-	width: 100%;
-	background: rgba(67, 75, 86, 0.22);
-	margin: 1.2rem 0 1.25rem;
+  /* 1) But : créer une séparation claire entre l’en-tête (titre/description) et le corps. */
+  /* 2) Variables clés : trait fin + marge verticale confortable. */
+  /* 3) Flux : meilleure hiérarchie visuelle à l’ouverture d’un article. */
+  height: 1px;
+  width: 100%;
+  background: rgba(67, 75, 86, 0.22);
+  margin: 1.2rem 0 1.25rem;
 }
 
 .dv-article-media-band {
-	/* 1) But : contenu interne de la section médias dédiée (la couleur est portée par la section .accent3). */
-	/* 2) Variables clés : paddings internes sans marges négatives. */
-	/* 3) Flux : plus de liserés blancs latéraux, rendu propre et stable. */
-	padding: 0.2rem 0 0.1rem;
-	color: rgba(255, 255, 255, 0.95);
+  /* 1) But : contenu interne de la section médias dédiée (la couleur est portée par la section .accent3). */
+  /* 2) Variables clés : paddings internes sans marges négatives. */
+  /* 3) Flux : plus de liserés blancs latéraux, rendu propre et stable. */
+  padding: 0.2rem 0 0.1rem;
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .dv-article-media-band > h3 {
-	margin-top: 0;
-	color: #ffffff;
+  margin-top: 0;
+  color: #ffffff;
 }
 
 .dv-article-media-band .dv-media-thumb {
-	background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .dv-article-media-band__empty {
-	margin: 0;
-	opacity: 0.92;
+  margin: 0;
+  opacity: 0.92;
 }
 
 .dv-article-media-band__actions {
-	margin: 1rem 0 0;
+  margin: 1rem 0 0;
 }
 
 .dv-article-media-band__actions .button {
-	background: rgba(255, 255, 255, 0.88);
-	color: #3f4b5d !important;
+  background: rgba(255, 255, 255, 0.88);
+  color: #3f4b5d !important;
 }
 
 @media screen and (max-width: 736px) {
-	.dv-article-media-band {
-		padding: 0;
-	}
+  .dv-article-media-band {
+    padding: 0;
+  }
 }
 
 .dv-article-body iframe.ql-video,
 .dv-article-body iframe[src*='youtube.com/embed'],
 .dv-article-body iframe[src*='player.vimeo.com'] {
-	max-width: 100%;
-	aspect-ratio: 16 / 9;
-	height: auto;
-	display: block;
-	border: 0;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  display: block;
+  border: 0;
 }
 
 /* Bloc de code et citation (sortie Quill / article démo) — pas de feuille quill.snow sur les pages publiques. */
 .dv-article-body blockquote {
-	border-left: 4px solid rgba(67, 75, 86, 0.28);
-	margin: 1.15em 0;
-	padding: 0.15em 0 0.15em 1.1em;
-	color: rgba(67, 75, 86, 0.92);
+  border-left: 4px solid rgba(67, 75, 86, 0.28);
+  margin: 1.15em 0;
+  padding: 0.15em 0 0.15em 1.1em;
+  color: rgba(67, 75, 86, 0.92);
 }
 
 .dv-article-body pre.ql-syntax {
-	background: #23241f;
-	color: #f8f8f2;
-	padding: 1rem 1.15rem;
-	border-radius: 6px;
-	overflow-x: auto;
-	font-family: Consolas, Monaco, 'Courier New', monospace;
-	font-size: 0.88em;
-	line-height: 1.45;
-	margin: 1em 0;
+  background: #23241f;
+  color: #f8f8f2;
+  padding: 1rem 1.15rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-family: Consolas, Monaco, 'Courier New', monospace;
+  font-size: 0.88em;
+  line-height: 1.45;
+  margin: 1em 0;
 }
 
 .dv-article-body a {
-	word-break: break-word;
+  word-break: break-word;
 }
