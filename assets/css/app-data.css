@@ -716,6 +716,12 @@ html {
   visibility: visible !important;
   transform: translateY(0) !important;
   display: block !important;
+  /* 1) But : supprimer la "carte" blanche héritée du thème `.carousel article`. */
+  /* 2) Variables clés : fond transparent + ombre retirée + radius nul côté article. */
+  /* 3) Flux : seul le bloc média (image + bandeau) reste visible, sans débord blanc. */
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
 }
 
 /* Le thème empile les articles du .carousel sur mobile avec des marges : on garde une seule rangée horizontale. */
@@ -758,6 +764,10 @@ html {
   max-width: min(100%, 750px);
   position: relative;
   overflow: hidden;
+  /* 1) But : garantir la découpe arrondie de tout le bloc (image + bandeau). */
+  /* 2) Variable clé : rayon porté par le conteneur, pas seulement par l'`img`. */
+  /* 3) Flux : plus de coins inférieurs blanchâtres sur mobile. */
+  border-radius: 12px;
   aspect-ratio: auto !important;
   display: flex;
   align-items: center;
@@ -779,7 +789,7 @@ html {
   max-height: 750px;
   display: block;
   object-fit: contain;
-  border-radius: 12px;
+  border-radius: 0;
 }
 
 /* Conteneur slide : le bandeau est positionné en overlay sur la photo (plus en dessous dans le flux). */
