@@ -5,6 +5,10 @@
 
 import { getDefaultProducts } from './catalogDamienVerhee.js'
 import { getSeedArticles } from './seedArticlesFictifs.js'
+import {
+  getSeedGalleryAlbums,
+  getSeedGalleryItems
+} from './seedGalleryFictif.js'
 
 /**
  * État runtime unique (session navigateur). Réinitialisé à chaque rechargement.
@@ -136,6 +140,7 @@ function deepClone(obj) {
 
 /**
  * Fabrique l’état initial : données statiques éditables dans js/app/data/*.js (puis Firebase).
+ * Galerie fixe : seedGalleryFictif.js (albums + items sous `images/articles/`, `images/prix-et-recompenses/`, `images/humour/`).
  *
  * @returns {{ articles: ArticleRecord[], galleryAlbums: GalleryAlbumRecord[], galleryItems: GalleryItemRecord[], products: ProductRecord[] }}
  */
@@ -143,10 +148,8 @@ function createInitialState() {
   return {
     // Articles fictifs (sans événements) : seedArticlesFictifs.js — médias `images/pic*.jpg`
     articles: deepClone(getSeedArticles()),
-    galleryAlbums: [
-      { id: 'seed_album_dedicaces', title: 'Photos de dédicaces', sortOrder: 0 }
-    ],
-    galleryItems: [],
+    galleryAlbums: deepClone(getSeedGalleryAlbums()),
+    galleryItems: deepClone(getSeedGalleryItems()),
     // Boutique : catalogue dans catalogDamienVerhee.js (même forme que collection Firestore `products`).
     products: deepClone(getDefaultProducts())
   }

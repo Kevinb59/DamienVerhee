@@ -1339,10 +1339,8 @@ html {
 	background-color: #69c7ad;
 }
 
-/* Jaune clair : ombre un peu plus marquée pour garder le blanc lisible, comme un titre sur fond accent4. */
 .dv-admin__masthead-tabs .dv-admin__tab--shop {
 	background-color: #fed586;
-	text-shadow: 0 0.08em 0.28em rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
 /* Inactif : léger assombrissement ; actif : barre inférieure pour marquer la sélection. */
@@ -1997,6 +1995,110 @@ html {
 .dv-admin__gallery-items {
 	min-height: 3rem;
 	margin-bottom: 0.35rem;
+}
+
+/*
+ * Liste galerie admin : rangées avec miniature (pas de lien URL), type, légende, bouton supprimer.
+ * 1) But : préparer l’affichage mock / Firebase (thumbUrl + caption) sans exposer le lien dans la liste.
+ * 2) Clés : vignette fixe 4.5rem, object-fit cover, meta flexible avec ellipse sur la légende.
+ * 3) Flux : glisser la ligne entière sauf sur le bouton (Sortable filter côté JS).
+ */
+.dv-admin__sortable-list--gallery li.dv-admin__gitem-li {
+	align-items: stretch;
+	padding: 0.55rem 0.75rem;
+	min-height: 5.25rem;
+	width: 100%;
+}
+
+.dv-admin__sortable-list--gallery li.dv-admin__gitem-li .dv-admin__gitem-row {
+	flex: 1 1 0%;
+	min-width: 0;
+}
+
+.dv-admin__gitem-row {
+	display: flex;
+	align-items: center;
+	gap: 0.85rem;
+	min-width: 0;
+	width: 100%;
+}
+
+.dv-admin__gitem-thumb-wrap {
+	flex: 0 0 auto;
+	width: 4.5rem;
+	height: 4.5rem;
+	border-radius: 6px;
+	overflow: hidden;
+	background: rgba(67, 75, 86, 0.07);
+	border: 1px solid rgba(67, 75, 86, 0.14);
+}
+
+.dv-admin__gitem-thumb {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.dv-admin__gitem-thumb--video {
+	background: #000;
+}
+
+.dv-admin__gitem-thumb-placeholder {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1.1rem;
+	color: rgba(67, 75, 86, 0.45);
+	font-weight: 600;
+}
+
+.dv-admin__gitem-meta {
+	flex: 1 1 auto;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+}
+
+.dv-admin__gitem-type {
+	font-size: 0.7rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.07em;
+	color: rgba(67, 75, 86, 0.55);
+}
+
+.dv-admin__gitem-cap {
+	margin: 0;
+	font-size: 0.88rem;
+	line-height: 1.35;
+	color: #434b56;
+	overflow: hidden;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	word-break: break-word;
+}
+
+.dv-admin__gitem-actions {
+	flex: 0 0 auto;
+	align-self: center;
+}
+
+@media screen and (max-width: 480px) {
+	.dv-admin__gitem-row {
+		flex-wrap: wrap;
+	}
+
+	.dv-admin__gitem-actions {
+		width: 100%;
+		display: flex;
+		justify-content: flex-end;
+	}
 }
 
 .dv-admin__add-media-row {

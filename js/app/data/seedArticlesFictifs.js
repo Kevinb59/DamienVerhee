@@ -1,7 +1,7 @@
 /**
- * Articles fictifs pour la phase de conception (aucun événement).
- * Médias : images locales du thème (dossier `images/` à la racine du site).
- * Même forme que les documents Firestore `articles` pour migration Firebase.
+ * Articles fictifs pour la phase de conception (articles + événements démo).
+ * Médias : chemins `images/…` ou URL absolues (Unsplash / Pexels selon les entrées).
+ * Licences : https://unsplash.com/license — https://www.pexels.com/license/
  */
 
 /**
@@ -25,15 +25,55 @@
  */
 
 /**
- * Fabrique une entrée média image pointant vers `images/`.
+ * Fabrique une entrée média image : fichier sous `images/` ou URL `https://…`.
  *
  * @param {string} id - id stable dans l’article
- * @param {string} file - nom de fichier (ex. pic03.jpg)
+ * @param {string} fileOrUrl - ex. `pic03.jpg` ou URL complète
  * @param {string} [caption]
  */
-function img(id, file, caption = '') {
-  const url = `images/${file}`
+function img(id, fileOrUrl, caption = '') {
+  const raw = String(fileOrUrl || '')
+  const url = /^https?:\/\//i.test(raw) ? raw : `images/${raw}`
   return { id, type: 'image', url, thumbUrl: url, caption }
+}
+
+/**
+ * Construit l’URL CDN Pexels pour un id photo stable (évite les 404 Unsplash sur certaines clés).
+ *
+ * @param {string|number} photoId - identifiant numérique (URL de la fiche sur pexels.com)
+ * @returns {string}
+ */
+function pexelsPhoto(photoId) {
+  const id = String(photoId)
+  return `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=1400`
+}
+
+/**
+ * Banque d’illustrations : Unsplash quand l’id photo est valide, sinon Pexels (marais, lectures, etc.).
+ * w=1400 / compression : équilibre qualité et poids pour le carrousel et le corps d’article.
+ */
+const STOCK = {
+  demoEditeur:
+    'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=1400&q=80',
+  salonCouloir:
+    'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=1400&q=80',
+  salonTables: pexelsPhoto(762686),
+  pageBlanche:
+    'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1400&q=80',
+  marais: pexelsPhoto(4607392),
+  pileLivres: pexelsPhoto(4153141),
+  bureauCalme:
+    'https://images.unsplash.com/photo-1586953208448-b95a79798f07?auto=format&fit=crop&w=1400&q=80',
+  discussionGroupe:
+    'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1400&q=80',
+  casqueAudio: pexelsPhoto(373945),
+  notesBureau: pexelsPhoto(636246),
+  moodboard: pexelsPhoto(7688166),
+  relecturePages: pexelsPhoto(5622150),
+  courrier: pexelsPhoto(207962),
+  evtClubOcean: pexelsPhoto(8527857),
+  evtDedicace: pexelsPhoto(3758105),
+  evtSalonRegional: pexelsPhoto(4863270)
 }
 
 /** @type {ArticleSeed[]} */
@@ -81,7 +121,7 @@ const ARTICLES = [
 			<blockquote><em>Ceci est une citation.</em></blockquote>
 			<pre class="ql-syntax" spellcheck="false">Ceci est un bloc de code</pre>
 			<p>Ceci est un lien vers <a href="https://www.google.com" target="_blank" rel="noopener noreferrer">Google</a>.</p>
-			<p><img src="images/pic01.jpg" alt="Exemple d’image insérée dans le corps du texte" /></p>
+			<p><img src="${STOCK.demoEditeur}" alt="Exemple d’image insérée dans le corps du texte" /></p>
 		`.trim(),
     published: true,
     createdAt: '2026-04-13T08:00:00.000Z',
@@ -91,7 +131,9 @@ const ARTICLES = [
     eventTime: null,
     eventEndDate: null,
     eventLocation: '',
-    media: [img('m_demo', 'pic01.jpg', 'Illustration démo éditeur')]
+    media: [
+      img('m_demo', STOCK.demoEditeur, 'Illustration démo éditeur (Unsplash)')
+    ]
   },
   {
     id: 'seed_art_salon',
@@ -103,9 +145,9 @@ const ARTICLES = [
       'Salon, fatigue joyeuse et questions de lecteurs qui éclairent le texte.',
     bodyHtml: `
 			<p>Je rentre toujours épuisé et pourtant chargé d’énergie après un salon. Les questions qu’on vous pose révèlent parfois des angles sur vos propres personnages que vous n’aviez pas envisagés.</p>
-			<p><img src="images/pic01.jpg" alt="" /></p>
+			<p><img src="${STOCK.salonCouloir}" alt="" /></p>
 			<p>Entre deux tables, j’ai croisé d’anciens lecteurs devenus presque des habitués. On parle moins des ventes que des moments partagés autour d’un passage qui les a marqués.</p>
-			<p><img src="images/pic02.jpg" alt="" /></p>
+			<p><img src="${STOCK.salonTables}" alt="" /></p>
 		`.trim(),
     published: true,
     createdAt: '2025-02-18T14:30:00.000Z',
@@ -116,8 +158,8 @@ const ARTICLES = [
     eventEndDate: null,
     eventLocation: '',
     media: [
-      img('m_s1', 'pic01.jpg', 'Allée du salon'),
-      img('m_s2', 'pic02.jpg', 'Stand et rencontres')
+      img('m_s1', STOCK.salonCouloir, 'Allée du salon (Unsplash)'),
+      img('m_s2', STOCK.salonTables, 'Stand et rencontres (Pexels)')
     ]
   },
   {
@@ -129,7 +171,7 @@ const ARTICLES = [
     summaryLine: 'Trop d’idées, peur de choisir : survivre à l’écran vide.',
     bodyHtml: `
 			<p>La page blanche n’est pas l’absence d’idées : c’est souvent l’inverse. Trop d’images, trop de chemins possibles, et la peur de fermer une porte en en choisissant une autre.</p>
-			<p><img src="images/pic03.jpg" alt="" /></p>
+			<p><img src="${STOCK.pageBlanche}" alt="" /></p>
 			<p>Ma méthode : noter trois phrases brutes, sans les relire, puis revenir le lendemain. Rarement la bonne est dans les trois ; presque toujours elle est entre elles.</p>
 		`.trim(),
     published: true,
@@ -140,7 +182,7 @@ const ARTICLES = [
     eventTime: null,
     eventEndDate: null,
     eventLocation: '',
-    media: [img('m_pb', 'pic03.jpg', 'Ambiance calme')]
+    media: [img('m_pb', STOCK.pageBlanche, 'Machine à écrire / écriture (Unsplash)')]
   },
   {
     id: 'seed_art_marais',
@@ -152,7 +194,7 @@ const ARTICLES = [
       'Ramasser des détails du Marais avant qu’ils ne deviennent phrases.',
     bodyHtml: `
 			<p>Je marche souvent sans carnet, juste pour laisser les sons et les odeurs s’imprimer. Plus tard, au clavier, un détail remonte : une barque qui grince, une herbe trop haute sur le chemin.</p>
-			<p><img src="images/pic04.jpg" alt="" /></p>
+			<p><img src="${STOCK.marais}" alt="" /></p>
 			<p>Ce n’est pas du reportage : c’est une réserve d’authenticité pour quand le récit a besoin de souffle.</p>
 		`.trim(),
     published: true,
@@ -163,7 +205,7 @@ const ARTICLES = [
     eventTime: null,
     eventEndDate: null,
     eventLocation: '',
-    media: [img('m_ma', 'pic04.jpg', 'Marais au petit matin')]
+    media: [img('m_ma', STOCK.marais, 'Paysage eau et brume (Pexels)')]
   },
   {
     id: 'seed_art_inspirations',
@@ -175,7 +217,7 @@ const ARTICLES = [
       'Ce qui se lit ce mois-ci et comment ça influence la scène du milieu.',
     bodyHtml: `
 			<p>Ce mois-ci, j’ai alterné un polar nerveux et un récit plus contemplatif. Le contraste m’a aidé à équilibrer le ton d’une scène centrale que je retouchais depuis des semaines.</p>
-			<p><img src="images/pic05.jpg" alt="" /></p>
+			<p><img src="${STOCK.pileLivres}" alt="" /></p>
 			<p>Je ne cherche pas à copier : je note des gestes, des rythmes de phrases, des silences entre les dialogues.</p>
 		`.trim(),
     published: true,
@@ -186,7 +228,7 @@ const ARTICLES = [
     eventTime: null,
     eventEndDate: null,
     eventLocation: '',
-    media: [img('m_lec', 'pic05.jpg', 'Pile de lectures')]
+    media: [img('m_lec', STOCK.pileLivres, 'Livres et lecture (Pexels)')]
   },
   {
     id: 'seed_art_numerique',
@@ -198,7 +240,7 @@ const ARTICLES = [
       'Sept jours sans scroll : concentration retrouvée ou illusion ?',
     bodyHtml: `
 			<p>J’ai coupé les réseaux pendant sept jours — pas le mail professionnel, mais tout le reste. Les premiers jours : agacement. Puis des plages de deux heures d’affilée sans me lever « pour vérifier un truc ».</p>
-			<p><img src="images/pic06.jpg" alt="" /></p>
+			<p><img src="${STOCK.bureauCalme}" alt="" /></p>
 			<p>Le gain n’est pas magique en nombre de pages, mais en qualité d’attention. Je garde désormais des créneaux « avion » même quand je suis chez moi.</p>
 		`.trim(),
     published: true,
@@ -209,7 +251,7 @@ const ARTICLES = [
     eventTime: null,
     eventEndDate: null,
     eventLocation: '',
-    media: [img('m_num', 'pic06.jpg', 'Espace de travail dégagé')]
+    media: [img('m_num', STOCK.bureauCalme, 'Bureau minimal, esprit déconnecté (Unsplash)')]
   },
   {
     id: 'seed_art_club',
@@ -221,7 +263,7 @@ const ARTICLES = [
       'Quand les lecteurs réinterprètent une scène que vous croyiez close.',
     bodyHtml: `
 			<p>On était une quinzaine, autour d’un café trop petit et d’un gâteau partagé en trop petites parts — classique. La discussion a dévié sur la responsabilité des adultes dans les choix des adolescents du roman.</p>
-			<p><img src="images/pic07.jpg" alt="" /></p>
+			<p><img src="${STOCK.discussionGroupe}" alt="" /></p>
 			<p>Je n’interviens jamais pour « trancher » : le texte appartient aux lecteurs. En revanche, j’adore quand une scène que j’avais écrite vite prend une autre lecture collective.</p>
 		`.trim(),
     published: true,
@@ -232,7 +274,7 @@ const ARTICLES = [
     eventTime: null,
     eventEndDate: null,
     eventLocation: '',
-    media: [img('m_club', 'pic07.jpg', 'Échanges avec les lecteurs')]
+    media: [img('m_club', STOCK.discussionGroupe, 'Groupe en discussion (Unsplash)')]
   },
   {
     id: 'seed_art_musique',
@@ -243,7 +285,7 @@ const ARTICLES = [
     summaryLine: 'Silence, boucle ou playlist : adapter le son à chaque scène.',
     bodyHtml: `
 			<p>Les scènes d’action tolèrent souvent un rythme plus appuyé ; les dialogues intimes, presque jamais. J’ai testé le bruit de pluie enregistré : efficace pour les retours sur des passages déjà écrits, moins pour inventer.</p>
-			<p><img src="images/pic08.jpg" alt="" /></p>
+			<p><img src="${STOCK.casqueAudio}" alt="" /></p>
 			<p>L’important est de ne pas se battre contre son propre rituel : si ça marche, on garde ; si ça distrait, on coupe.</p>
 		`.trim(),
     published: true,
@@ -254,7 +296,7 @@ const ARTICLES = [
     eventTime: null,
     eventEndDate: null,
     eventLocation: '',
-    media: [img('m_mus', 'pic08.jpg', 'Ambiance sonore')]
+    media: [img('m_mus', STOCK.casqueAudio, 'Casque / musique et écriture (Pexels)')]
   },
   {
     id: 'seed_art_manuscrit',
@@ -266,9 +308,9 @@ const ARTICLES = [
       'Brouillons, dates bancales et une image qui change un personnage.',
     bodyHtml: `
 			<p>Je ne montre presque jamais ces brouillons. Ce sont des griffonnages, des flèches entre des dates incohérentes, des post-it qui se décollent. Pourtant, sans cette phase, le livre suivant resterait une intention.</p>
-			<p><img src="images/pic09.jpg" alt="" /></p>
+			<p><img src="${STOCK.notesBureau}" alt="" /></p>
 			<p>Une image m’est revenue en boucle cette semaine ; je l’ai collée au mur pour ne pas la perdre. Elle ne figurera peut-être pas dans le livre, mais elle a déjà modifié le regard d’un personnage secondaire.</p>
-			<p><img src="images/pic01.jpg" alt="" /></p>
+			<p><img src="${STOCK.moodboard}" alt="" /></p>
 		`.trim(),
     published: true,
     createdAt: '2024-12-20T09:40:00.000Z',
@@ -279,8 +321,8 @@ const ARTICLES = [
     eventEndDate: null,
     eventLocation: '',
     media: [
-      img('m_ms1', 'pic09.jpg', 'Notes et repères'),
-      img('m_ms2', 'pic01.jpg', 'Élément visuel du moodboard')
+      img('m_ms1', STOCK.notesBureau, 'Notes et repères (Pexels)'),
+      img('m_ms2', STOCK.moodboard, 'Moodboard créatif (Pexels)')
     ]
   },
   {
@@ -293,7 +335,7 @@ const ARTICLES = [
       'Supprimer la phrase qu’on aimait trop : petite trahison nécessaire.',
     bodyHtml: `
 			<p>La relecture est une phase de trahison nécessaire : trahison envers l’euphorie du premier jet. J’ai supprimé une métaphore que je trouvais brillante ; elle volait la scène au personnage.</p>
-			<p><img src="images/pic02.jpg" alt="" /></p>
+			<p><img src="${STOCK.relecturePages}" alt="" /></p>
 			<p>Conseil de copiste : lire à voix basse les dialogues. Si vous hésitez sur une respiration, la ponctuation n’est pas encore la bonne.</p>
 		`.trim(),
     published: true,
@@ -304,7 +346,7 @@ const ARTICLES = [
     eventTime: null,
     eventEndDate: null,
     eventLocation: '',
-    media: [img('m_rel', 'pic02.jpg', 'Pages annotées')]
+    media: [img('m_rel', STOCK.relecturePages, 'Pages et surligneur (Pexels)')]
   },
   {
     id: 'seed_art_poste',
@@ -316,7 +358,7 @@ const ARTICLES = [
       'Cartes, timbres de travers : un geste qui n’a rien d’une stratégie.',
     bodyHtml: `
 			<p>Je continue d’envoyer des cartes à des lecteurs qui en font la demande. Ce n’est pas scalable, ce n’est pas « stratégie » : c’est un geste qui me rappelle pourquoi j’ai commencé à écrire.</p>
-			<p><img src="images/pic03.jpg" alt="" /></p>
+			<p><img src="${STOCK.courrier}" alt="" /></p>
 			<p>Si un jour tout est dématérialisé, il restera au moins cette photo d’un timbre mal collé et d’une encre qui a un peu bavé.</p>
 		`.trim(),
     published: true,
@@ -327,7 +369,7 @@ const ARTICLES = [
     eventTime: null,
     eventEndDate: null,
     eventLocation: '',
-    media: [img('m_post', 'pic03.jpg', 'Courrier et papeterie')]
+    media: [img('m_post', STOCK.courrier, 'Courrier et papeterie (Pexels)')]
   },
   /** Événements (calendrier d’accueil) — dates en avril 2026 pour la démo. */
   {
@@ -338,6 +380,7 @@ const ARTICLES = [
       'Échanges autour du huitième roman : personnages, structure et ce que la critique a relevé. Inscriptions limitées.',
     summaryLine: '',
     bodyHtml: `
+			<p><img src="${STOCK.evtClubOcean}" alt="" /></p>
 			<p>Une soirée dédiée aux questions de lecture collective autour du roman. Inscription recommandée.</p>
 		`.trim(),
     published: true,
@@ -349,7 +392,13 @@ const ARTICLES = [
     eventEndDate: null,
 		eventEndTime: null,
     eventLocation: 'Médiathèque du Marais',
-    media: []
+    media: [
+      img(
+        'evt_club_visuel',
+        STOCK.evtClubOcean,
+        'Lecture et discussion de groupe (Pexels)'
+      )
+    ]
   },
   {
     id: 'seed_evt_dedicace',
@@ -358,8 +407,10 @@ const ARTICLES = [
     excerpt:
       'Rencontre et signatures : romans historiques, thrillers et dernier ouvrage. Échanges libres avec les lecteurs.',
     summaryLine: '',
-    bodyHtml:
-      `<p>Retrouvez-moi pour une séance de dédicaces et de discussion autour des parcours de lecture.</p>`.trim(),
+    bodyHtml: `
+			<p><img src="${STOCK.evtDedicace}" alt="" /></p>
+			<p>Retrouvez-moi pour une séance de dédicaces et de discussion autour des parcours de lecture.</p>
+		`.trim(),
     published: true,
     createdAt: '2026-03-12T11:00:00.000Z',
     updatedAt: '2026-03-12T11:00:00.000Z',
@@ -369,7 +420,13 @@ const ARTICLES = [
     eventEndDate: null,
 		eventEndTime: null,
     eventLocation: 'Librairie Pages du Marais',
-    media: []
+    media: [
+      img(
+        'evt_ded_visuel',
+        STOCK.evtDedicace,
+        'Signature et rencontre lecteurs (Pexels)'
+      )
+    ]
   },
   {
     id: 'seed_evt_salon_regional',
@@ -378,8 +435,10 @@ const ARTICLES = [
     excerpt:
       'Stand partagé avec des auteurs de la région : tables rondes, dédicaces et animations autour des premières pages.',
     summaryLine: '',
-    bodyHtml:
-      `<p>Week-end dédié aux rencontres avec le public et aux échanges entre auteurs.</p>`.trim(),
+    bodyHtml: `
+			<p><img src="${STOCK.evtSalonRegional}" alt="" /></p>
+			<p>Week-end dédié aux rencontres avec le public et aux échanges entre auteurs.</p>
+		`.trim(),
     published: true,
     createdAt: '2026-03-15T09:00:00.000Z',
     updatedAt: '2026-03-15T09:00:00.000Z',
@@ -389,7 +448,13 @@ const ARTICLES = [
     eventEndDate: '2026-04-27',
 		eventEndTime: null,
     eventLocation: 'Parc des expositions — Hall B',
-    media: []
+    media: [
+      img(
+        'evt_salon_visuel',
+        STOCK.evtSalonRegional,
+        'Salon du livre et stands (Pexels)'
+      )
+    ]
   }
 ]
 

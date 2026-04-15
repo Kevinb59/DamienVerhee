@@ -711,6 +711,95 @@ async function refreshGalleryAdmin() {
 	}
 }
 
+/**
+ * Construit l’aperçu miniature d’un média galerie (image ou vidéo) pour la liste admin.
+ * Pas de lien vers l’URL : glisser-déposer + suppression uniquement ; l’URL reste en BDD (mock / Firebase).
+ *
+ * @param {HTMLElement} wrap - conteneur carré `.dv-admin__gitem-thumb-wrap`
+ * @param {{ type: string, url: string, thumbUrl?: string, caption?: string }} it
+ */
+function mountGalleryItemThumb(wrap, it) {
+	const url = String(it.url || '').trim();
+	const thumb = String(it.thumbUrl || '').trim();
+	const thumbSrc = (thumb || url).trim();
+	const isVideo = it.type === 'video';
+	const looksLikeImage = (s) => /\.(jpe?g|png|webp|gif|bmp|svg)(\?|#|$)/i.test(s);
+	const looksLikeVideoFile = (s) => /\.(mp4|webm|ogg|mov)(\?|#|$)/i.test(s);
+
+	/**
+	 * Remplace une miniature cassée par un pictogramme neutre (URL Firebase invalide, CORS, etc.).
+	 *
+	 * @param {HTMLImageElement} im
+	 */
+	function onThumbImgError(im) {
+		im.remove();
+		if (wrap.querySelector('.dv-admin__gitem-thumb-placeholder')) {
+			return;
+		}
+		const ph = document.createElement('div');
+		ph.className = 'dv-admin__gitem-thumb-placeholder';
+		ph.setAttribute('role', 'img');
+		ph.setAttribute('aria-label', 'Miniature introuvable');
+		ph.textContent = '?';
+		wrap.appendChild(ph);
+	}
+
+	if (!thumbSrc) {
+		const ph = document.createElement('div');
+		ph.className = 'dv-admin__gitem-thumb-placeholder';
+		ph.setAttribute('role', 'img');
+		ph.setAttribute('aria-label', 'Aperçu indisponible');
+		ph.textContent = isVideo ? '▶' : '—';
+		wrap.appendChild(ph);
+		return;
+	}
+
+	if (isVideo && (looksLikeImage(thumb) || (thumb && !looksLikeVideoFile(thumb)))) {
+		const im = document.createElement('img');
+		im.className = 'dv-admin__gitem-thumb';
+		im.draggable = false;
+		im.loading = 'lazy';
+		im.decoding = 'async';
+		im.src = thumb || thumbSrc;
+		im.alt = it.caption ? String(it.caption).slice(0, 120) : 'Aperçu vidéo';
+		im.addEventListener('error', () => onThumbImgError(im), { once: true });
+		wrap.appendChild(im);
+		return;
+	}
+
+	if (isVideo && looksLikeVideoFile(url)) {
+		const v = document.createElement('video');
+		v.className = 'dv-admin__gitem-thumb dv-admin__gitem-thumb--video';
+		v.src = url;
+		v.muted = true;
+		v.playsInline = true;
+		v.preload = 'metadata';
+		v.setAttribute('aria-label', 'Aperçu vidéo');
+		wrap.appendChild(v);
+		return;
+	}
+
+	if (isVideo) {
+		const ph = document.createElement('div');
+		ph.className = 'dv-admin__gitem-thumb-placeholder';
+		ph.setAttribute('role', 'img');
+		ph.setAttribute('aria-label', 'Vidéo (aperçu non disponible pour cette URL)');
+		ph.textContent = '▶';
+		wrap.appendChild(ph);
+		return;
+	}
+
+	const im = document.createElement('img');
+	im.className = 'dv-admin__gitem-thumb';
+	im.draggable = false;
+	im.loading = 'lazy';
+	im.decoding = 'async';
+	im.src = thumbSrc;
+	im.alt = it.caption ? String(it.caption).slice(0, 120) : 'Miniature';
+	im.addEventListener('error', () => onThumbImgError(im), { once: true });
+	wrap.appendChild(im);
+}
+
 async function renderGalleryItemsList() {
 	const listEl = document.getElementById('admin-gallery-items');
 	if (!galleryAlbumId) {
@@ -720,13 +809,45 @@ async function renderGalleryItemsList() {
 	listEl.innerHTML = '';
 	const ul = document.createElement('ul');
 	ul.id = 'sort-gallery-items';
-	ul.className = 'dv-admin__sortable-list';
+	ul.className = 'dv-admin__sortable-list dv-admin__sortable-list--gallery';
 	items.forEach((it) => {
 		const li = document.createElement('li');
+		li.className = 'dv-admin__gitem-li';
 		li.dataset.id = it.id;
-		const shortUrl = it.url.length > 52 ? `${it.url.slice(0, 52)}…` : it.url;
-		li.innerHTML = `<span class="dv-admin__gitem-label">${it.type} — ${shortUrl}</span>
-			<button type="button" class="button small" data-del-gitem="${it.id}">Supprimer</button>`;
+
+		const row = document.createElement('div');
+		row.className = 'dv-admin__gitem-row';
+
+		const thumbWrap = document.createElement('div');
+		thumbWrap.className = 'dv-admin__gitem-thumb-wrap';
+		mountGalleryItemThumb(thumbWrap, it);
+
+		const meta = document.createElement('div');
+		meta.className = 'dv-admin__gitem-meta';
+		const typeEl = document.createElement('span');
+		typeEl.className = 'dv-admin__gitem-type';
+		typeEl.textContent = it.type === 'video' ? 'Vidéo' : 'Image';
+		const capEl = document.createElement('p');
+		capEl.className = 'dv-admin__gitem-cap';
+		const cap = String(it.caption || '').trim();
+		capEl.textContent = cap || 'Sans légende';
+
+		meta.appendChild(typeEl);
+		meta.appendChild(capEl);
+
+		const actions = document.createElement('div');
+		actions.className = 'dv-admin__gitem-actions';
+		const delBtn = document.createElement('button');
+		delBtn.type = 'button';
+		delBtn.className = 'button small';
+		delBtn.dataset.delGitem = it.id;
+		delBtn.textContent = 'Supprimer';
+		actions.appendChild(delBtn);
+
+		row.appendChild(thumbWrap);
+		row.appendChild(meta);
+		row.appendChild(actions);
+		li.appendChild(row);
 		ul.appendChild(li);
 	});
 	listEl.appendChild(ul);
@@ -738,6 +859,8 @@ async function renderGalleryItemsList() {
 		ul._dvSortable = Sortable.create(ul, {
 			animation: 150,
 			ghostClass: 'dv-sortable-ghost',
+			filter: 'button',
+			preventOnFilter: true,
 			onEnd: async () => {
 				const ids = Array.from(ul.children).map((child) => child.dataset.id);
 				await reorderGalleryItems(galleryAlbumId, ids);
