@@ -85,8 +85,13 @@
           <div class="inner">
             <!-- Bloc 1 : titre pleine largeur ; bloc 2 : grille 3 colonnes (onglets colorés accent2 / accent3 / accent4 du thème). -->
             <section class="dv-admin__masthead" aria-label="Administration">
-              <div class="dv-admin__masthead-title">
-                <h1>Administration</h1>
+              <div class="dv-admin__masthead-publishbar">
+                <p class="dv-admin__publish-status" id="admin-publish-status">
+                  Dernière publication : jamais
+                </p>
+                <button type="button" class="button primary" id="btn-publish-site">
+                  Publier le site
+                </button>
               </div>
               <div
                 class="dv-admin__masthead-tabs"
@@ -119,11 +124,6 @@
                   aria-selected="false"
                 >
                   Boutique
-                </button>
-              </div>
-              <div class="dv-admin__masthead-actions">
-                <button type="button" class="button primary" id="btn-publish-site">
-                  Publier le site
                 </button>
               </div>
             </section>

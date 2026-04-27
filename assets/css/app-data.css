@@ -1374,12 +1374,39 @@ html {
   box-shadow: 0 2px 14px rgba(0, 0, 0, 0.06);
 }
 
-/* Bandeau titre : pleine largeur du .inner, fond accent1 comme les carrousels du site. */
-.dv-admin__masthead-title {
+/* Barre de publication : statut à gauche + action à droite. */
+.dv-admin__masthead-publishbar {
   background-color: #575b72;
   color: rgba(255, 255, 255, 0.92);
-  text-align: center;
-  padding: 2.15rem 1.5rem 1.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+}
+
+.dv-admin__publish-status {
+  margin: 0;
+  font-size: 0.9rem;
+  letter-spacing: 0.03em;
+  text-transform: none;
+}
+
+.dv-admin__masthead-publishbar #btn-publish-site {
+  margin: 0;
+  white-space: nowrap;
+}
+
+@media screen and (max-width: 736px) {
+  .dv-admin__masthead-publishbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dv-admin__masthead-publishbar #btn-publish-site {
+    align-self: stretch;
+    text-align: center;
+  }
 }
 
 .dv-admin__masthead-title h1 {
@@ -1476,17 +1503,6 @@ html {
   filter: brightness(1);
   opacity: 1;
   box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.22) !important;
-}
-
-.dv-admin__masthead-actions {
-  /* 1) But : exposer l'action "Publier le site" dans le bandeau admin. */
-  /* 2) Variables clés : alignement à droite + padding compact. */
-  /* 3) Flux : action visible sans casser la hiérarchie des onglets. */
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 0.85rem 1rem;
-  background: rgba(87, 91, 114, 0.08);
 }
 
 .dv-admin__panel {

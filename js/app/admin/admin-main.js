@@ -1178,22 +1178,7 @@ async function triggerSiteRebuild() {
 			button.disabled = true;
 			button.textContent = 'Publication en cours...';
 		}
-		const { getApp, getApps, initializeApp } = await import(
-			'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'
-		);
-		const { getAuth } = await import(
-			'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js'
-		);
-		const app =
-			getApps().length > 0
-				? getApp()
-				: initializeApp(window.__FIREBASE_CONFIG__ || {});
-		const auth = getAuth(app);
-		const user = auth.currentUser;
-		if (!user) {
-			throw new Error('Session admin expirée. Reconnectez-vous.');
-		}
-		const idToken = await user.getIdToken();
+		const idToken = await getCurrentAdminIdToken();
 		const response = await fetch('/api/rebuild', {
 			method: 'POST',
 			headers: {
@@ -1204,6 +1189,7 @@ async function triggerSiteRebuild() {
 		if (!response.ok || !payload?.ok) {
 			throw new Error(payload?.message || 'Rebuild impossible.');
 		}
+		renderLastPublishStatus(payload?.publishedAt || null);
 		window.alert(
 			'Publication déclenchée. Vercel va lancer un nouveau build avec le contenu Firestore.'
 		);
@@ -1218,6 +1204,86 @@ async function triggerSiteRebuild() {
 	}
 }
 
+/**
+ * Retourne le token Firebase de l'admin courant.
+ *
+ * 1) But : mutualiser l'auth Bearer pour les routes admin sécurisées.
+ * 2) Variables clés : app Firebase existante + currentUser.
+ * 3) Flux : initialisation sûre -> lecture user -> getIdToken.
+ */
+async function getCurrentAdminIdToken() {
+	const { getApp, getApps, initializeApp } = await import(
+		'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'
+	);
+	const { getAuth } = await import(
+		'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js'
+	);
+	const app =
+		getApps().length > 0
+			? getApp()
+			: initializeApp(window.__FIREBASE_CONFIG__ || {});
+	const auth = getAuth(app);
+	const user = auth.currentUser;
+	if (!user) {
+		throw new Error('Session admin expirée. Reconnectez-vous.');
+	}
+	return user.getIdToken()
+}
+
+/**
+ * Affiche le statut "Dernière publication" dans le bandeau admin.
+ *
+ * 1) But : donner une trace visuelle persistante du dernier clic de publication.
+ * 2) Variables clés :
+ *    - publishedAtIso : timestamp ISO serveur (Firestore).
+ *    - formatted : rendu FR DD/MM/YYYY à HH:MM.
+ * 3) Flux :
+ *    - récupération API de statut (si nécessaire)
+ *    - validation date
+ *    - mise à jour texte du bandeau
+ */
+async function renderLastPublishStatus(publishedAtIso = null) {
+	const statusNode = document.getElementById('admin-publish-status');
+	if (!statusNode) {
+		return;
+	}
+
+	let rawIso = publishedAtIso;
+	if (!rawIso) {
+		try {
+			const idToken = await getCurrentAdminIdToken();
+			const response = await fetch('/api/rebuild-status', {
+				method: 'GET',
+				headers: {
+					Authorization: `Bearer ${idToken}`,
+				},
+			});
+			const payload = await response.json().catch(() => ({}));
+			rawIso = response.ok && payload?.ok ? payload.publishedAt : null;
+		} catch (_error) {
+			rawIso = null;
+		}
+	}
+
+	if (!rawIso) {
+		statusNode.textContent = 'Dernière publication : jamais';
+		return;
+	}
+	const dt = new Date(rawIso);
+	if (Number.isNaN(dt.getTime())) {
+		statusNode.textContent = 'Dernière publication : jamais';
+		return;
+	}
+	const formatted = new Intl.DateTimeFormat('fr-FR', {
+		day: '2-digit',
+		month: '2-digit',
+		year: 'numeric',
+		hour: '2-digit',
+		minute: '2-digit',
+	}).format(dt);
+	statusNode.textContent = `Dernière publication le ${formatted.replace(',', ' à')}`;
+}
+
 document.getElementById('btn-publish-site')?.addEventListener('click', () => {
 	triggerSiteRebuild();
 });
@@ -1228,4 +1294,7 @@ syncEventFieldsVisibility();
 syncGallerySourceMode();
 syncProductImageSourceMode();
 updateProductSaveButtonLabel();
+renderLastPublishStatus().catch(() => {
+	/* no-op: fallback "jamais" deja geré */
+});
 refreshArticleList();
