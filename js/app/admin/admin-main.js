@@ -23,7 +23,7 @@ import {
 import { extractMediaFromHtml, mergeArticleMedia } from '../mediaextract.js';
 import { setupQuillMediaResize } from './quill-media-resize.js';
 import { normalizeVideoEmbedUrl } from './video-embed-url.js';
-import { enforceAdminAccess } from './admin-auth.js';
+import { enforceAdminAccess, getCurrentAdminIdToken } from './admin-auth.js';
 
 /* global Quill, Sortable */
 
@@ -1210,32 +1210,6 @@ async function triggerSiteRebuild() {
 			button.textContent = defaultLabel;
 		}
 	}
-}
-
-/**
- * Retourne le token Firebase de l'admin courant.
- *
- * 1) But : mutualiser l'auth Bearer pour les routes admin sécurisées.
- * 2) Variables clés : app Firebase existante + currentUser.
- * 3) Flux : initialisation sûre -> lecture user -> getIdToken.
- */
-async function getCurrentAdminIdToken() {
-	const { getApp, getApps, initializeApp } = await import(
-		'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'
-	);
-	const { getAuth } = await import(
-		'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js'
-	);
-	const app =
-		getApps().length > 0
-			? getApp()
-			: initializeApp(window.__FIREBASE_CONFIG__ || {});
-	const auth = getAuth(app);
-	const user = auth.currentUser;
-	if (!user) {
-		throw new Error('Session admin expirée. Reconnectez-vous.');
-	}
-	return user.getIdToken()
 }
 
 /**

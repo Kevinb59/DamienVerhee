@@ -29,10 +29,33 @@ async function getFirebaseAuthContext() {
 	}
 	const appMod = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js');
 	const authMod = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js');
-	const app = appMod.initializeApp(cfg);
+	/**
+	 * 1) But : une seule app [DEFAULT] partagée avec Firestore (store) si déjà initialisée.
+	 * 2) Variable clé : getApps() avant initializeApp.
+	 * 3) Flux : réutiliser l’instance existante ou créer la config client.
+	 */
+	const app = appMod.getApps().length ? appMod.getApp() : appMod.initializeApp(cfg);
 	const auth = authMod.getAuth(app);
 	firebaseAuthContext = { auth, authApi: authMod };
 	return firebaseAuthContext;
+}
+
+/**
+ * Token ID Firebase pour les routes API admin (rebuild, rebuild-status, etc.).
+ *
+ * 1) But : réutiliser strictement la même instance `Auth` que le portail de connexion.
+ * 2) Variables clés : éviter un second import SDK (ex. autre version) où `currentUser` serait toujours null.
+ * 3) Flux : contexte mémoïsé -> utilisateur courant -> `getIdToken()`.
+ *
+ * @returns {Promise<string>}
+ */
+export async function getCurrentAdminIdToken() {
+	const { auth } = await getFirebaseAuthContext();
+	const user = auth.currentUser;
+	if (!user) {
+		throw new Error('Session admin expirée. Reconnectez-vous.');
+	}
+	return user.getIdToken();
 }
 
 /**
