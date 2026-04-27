@@ -65,11 +65,11 @@ function enumerateDateStrings(startYmd, endYmd) {
 /**
  * Construit une map `date ISO jour → articles événements` (plusieurs entrées possibles le même jour).
  *
- * @returns {Promise<Map<string, import('../data/mockRepository.js').ArticleRecord[]>>}
+ * @returns {Promise<Map<string, Array<Record<string, any>>>>}
  */
 async function buildEventsByDateMap() {
   const events = await listEventArticles({ upcomingOnly: false })
-  /** @type {Map<string, import('../data/mockRepository.js').ArticleRecord[]>} */
+  /** @type {Map<string, Array<Record<string, any>>>} */
   const map = new Map()
   for (const ev of events) {
     if (!ev.eventDate) {
@@ -92,7 +92,7 @@ async function buildEventsByDateMap() {
 /**
  * Rend le panneau de droite : consigne seule, ou titre + extrait + lien article.
  *
- * @param {import('../data/mockRepository.js').ArticleRecord | null} article
+ * @param {Record<string, any> | null} article
  */
 function renderEventDetail(article) {
   const root = document.getElementById('index-event-detail-root')
@@ -166,7 +166,7 @@ function buildMonthCells(year, monthIndex) {
 /**
  * Affiche le calendrier dans `#index-event-calendar-root`.
  *
- * @param {Map<string, import('../data/mockRepository.js').ArticleRecord[]>} byDate
+ * @param {Map<string, Array<Record<string, any>>>} byDate
  * @param {{ year: number, monthIndex: number, selectedYmd: string | null }} view
  * @param {(ymd: string, hasEvent: boolean) => void} onPickDay
  */

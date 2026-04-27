@@ -238,7 +238,7 @@ export async function saveArticle(article) {
 	const t = nowIso();
 	const all = await listArticles({ publishedOnly: false });
 
-	// 1) But: aligner le comportement Firestore sur mockRepository.
+	// 1) But: conserver le comportement historique des enregistrements d'articles.
 	// 2) Variables cles: all, prev, payload.
 	// 3) Flux: update (preserve createdAt) ou create (defaults complets).
 	if (article.id) {

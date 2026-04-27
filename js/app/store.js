@@ -1,23 +1,19 @@
 /**
- * Façade unique pour les pages : mock en mémoire (seed JS) ou Firebase selon la config.
+ * Façade unique pour les pages : snapshot statique public ou Firebase selon la config.
  * Les pages importent uniquement ce module pour rester inchangées au moment du basculement.
  */
 
 import { getDataProvider } from './config.js'
-import * as mockRepository from './data/mockRepository.js'
 import * as firebaseRepository from './data/firebaseRepository.js'
 import * as staticRepository from './data/staticRepository.js'
 
 /**
- * @returns {typeof mockRepository}
+ * @returns {typeof staticRepository}
  */
 function repo() {
   const provider = getDataProvider()
   if (provider === 'firebase') {
     return firebaseRepository
-  }
-  if (provider === 'mock') {
-    return mockRepository
   }
   return staticRepository
 }
@@ -73,7 +69,7 @@ export async function listLatestArticles(limit = 3) {
  * Articles marqués comme événements (réutilisables ailleurs sur le site : agenda, blocs d’accueil, etc.).
  *
  * @param {{ upcomingOnly?: boolean }} [opts]
- * @returns {Promise<import('./data/mockRepository.js').ArticleRecord[]>}
+ * @returns {Promise<Array<Record<string, any>>>}
  */
 export async function listEventArticles(opts = {}) {
   const all = await listArticles({ publishedOnly: true })
