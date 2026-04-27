@@ -2454,6 +2454,70 @@ html {
   line-height: 1.55;
 }
 
+/* Personnalisation du picker "taille" Quill avec libellés lisibles (au lieu de "Normal"). */
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-label[data-value='10px']::before,
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-item[data-value='10px']::before {
+  content: 'Très petit';
+}
+
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-label[data-value='12px']::before,
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-item[data-value='12px']::before {
+  content: 'Petit';
+}
+
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-label[data-value='14px']::before,
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-item[data-value='14px']::before {
+  content: 'Moyen -';
+}
+
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-label[data-value='16px']::before,
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-item[data-value='16px']::before {
+  content: 'Moyen';
+}
+
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-label[data-value='18px']::before,
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-item[data-value='18px']::before {
+  content: 'Moyen +';
+}
+
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-label[data-value='24px']::before,
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-item[data-value='24px']::before {
+  content: 'Grand';
+}
+
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-label[data-value='32px']::before,
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-item[data-value='32px']::before {
+  content: 'Très grand';
+}
+
+/* Valeur sans data-value (paragraphe par défaut) -> "Moyen". */
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-label:not([data-value])::before {
+  content: 'Moyen';
+}
+
+/* Aperçu visuel : chaque entrée de menu reflète réellement sa taille. */
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-item[data-value='10px']::before {
+  font-size: 10px;
+}
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-item[data-value='12px']::before {
+  font-size: 12px;
+}
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-item[data-value='14px']::before {
+  font-size: 14px;
+}
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-item[data-value='16px']::before {
+  font-size: 16px;
+}
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-item[data-value='18px']::before {
+  font-size: 18px;
+}
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-item[data-value='24px']::before {
+  font-size: 24px;
+}
+.dv-admin .ql-snow .ql-picker.ql-size .ql-picker-item[data-value='32px']::before {
+  font-size: 32px;
+}
+
 /* Images : pas de glisser-déposer natif (confond avec redimensionnement) ; ratio géré par width seul. */
 .dv-admin .ql-editor img {
   max-width: 100%;
@@ -2658,6 +2722,19 @@ html {
 
 .dv-article-body a {
   word-break: break-word;
+}
+
+/* Alignements Quill (classes injectées dans bodyHtml) à appliquer aussi côté public. */
+.dv-article-body .ql-align-center {
+  text-align: center;
+}
+
+.dv-article-body .ql-align-right {
+  text-align: right;
+}
+
+.dv-article-body .ql-align-justify {
+  text-align: justify;
 }
 
 .dv-admin-auth {
