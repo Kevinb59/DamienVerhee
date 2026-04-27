@@ -1352,6 +1352,61 @@ html {
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
 }
 
+/* ——— Admin : bouton unique header (déconnexion + accueil) ——— */
+.dv-admin-body #header > nav {
+  /* Évite le `nowrap` du thème qui empêcherait le libellé long de respirer sur petits écrans. */
+  white-space: normal;
+}
+
+.dv-admin-body #header .dv-admin-header-exit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.35em 0.5em;
+  line-height: 1.2;
+  white-space: normal;
+  text-align: center;
+  max-width: min(100%, 22rem);
+  /* Le thème met `text-transform: uppercase` sur `#header > nav ul li` : on neutralise pour le libellé mixte. */
+  text-transform: none;
+}
+
+/**
+ * 1) But : hiérarchie visuelle — libellé secondaire blanc plus petit, accueil mis en avant.
+ * 2) Variables clés : `__logout` (petit), `__home` (uppercase plus lisible dans le bouton primary).
+ * 3) Flux : flex inline sur le bouton ; séparateur discret entre les deux intentions.
+ */
+.dv-admin-body #header .dv-admin-header-exit__logout {
+  font-size: 0.68em;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.dv-admin-body #header .dv-admin-header-exit__sep {
+  font-size: 0.72em;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.dv-admin-body #header .dv-admin-header-exit__home {
+  font-size: 1em;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+
+@media screen and (max-width: 736px) {
+  .dv-admin-body #header .dv-admin-header-exit {
+    max-width: 100%;
+    padding-left: 0.65em;
+    padding-right: 0.65em;
+  }
+}
+
 /* ——— Admin : même largeur que l’index (.wrapper > .inner > .main), pas de max-width réduit ——— */
 .dv-admin {
   max-width: none;

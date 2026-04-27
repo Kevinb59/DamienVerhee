@@ -155,8 +155,17 @@ export async function enforceAdminAccess() {
 	});
 
 	if (logoutButton) {
+		/**
+		 * 1) But : une seule action — fermer la session Firebase puis afficher l’accueil public.
+		 * 2) Variables clés : `auth` / `authApi` du contexte partagé avec le login.
+		 * 3) Flux : signOut (best effort) -> redirection vers `index.html` (évite rester sur l’admin déconnecté).
+		 */
 		logoutButton.addEventListener('click', async () => {
-			await authApi.signOut(auth);
+			try {
+				await authApi.signOut(auth);
+			} finally {
+				window.location.assign('index.html');
+			}
 		});
 	}
 
