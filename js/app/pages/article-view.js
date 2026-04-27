@@ -15,6 +15,56 @@ function qs(name) {
   return new URLSearchParams(window.location.search).get(name)
 }
 
+function extractYouTubeId(url) {
+  const raw = String(url || '').trim()
+  const patterns = [
+    /youtube\.com\/watch\?v=([a-zA-Z0-9_-]{6,})/i,
+    /youtu\.be\/([a-zA-Z0-9_-]{6,})/i,
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]{6,})/i
+  ]
+  for (const re of patterns) {
+    const m = raw.match(re)
+    if (m?.[1]) {
+      return m[1]
+    }
+  }
+  return ''
+}
+
+function extractVimeoId(url) {
+  const raw = String(url || '').trim()
+  const m =
+    raw.match(/vimeo\.com\/(?:video\/)?(\d{6,})/i) ||
+    raw.match(/player\.vimeo\.com\/video\/(\d{6,})/i)
+  return m?.[1] || ''
+}
+
+/**
+ * 1) But : garantir une vraie miniature visuelle pour les vidéos (YouTube/Vimeo inclus).
+ * 2) Variables clés :
+ *    - explicitThumb : miniature fournie en BDD si disponible.
+ *    - ytId/vimeoId : extraction d'identifiant depuis URL vidéo.
+ * 3) Flux :
+ *    - priorité au thumb explicite
+ *    - fallback vers provider thumbnail
+ *    - sinon chaîne vide (affichage fond + icône play uniquement)
+ */
+function resolveVideoPosterUrl(videoUrl, explicitThumb) {
+  const thumb = String(explicitThumb || '').trim()
+  if (thumb) {
+    return thumb
+  }
+  const ytId = extractYouTubeId(videoUrl)
+  if (ytId) {
+    return `https://img.youtube.com/vi/${encodeURIComponent(ytId)}/hqdefault.jpg`
+  }
+  const vimeoId = extractVimeoId(videoUrl)
+  if (vimeoId) {
+    return `https://vumbnail.com/${encodeURIComponent(vimeoId)}.jpg`
+  }
+  return ''
+}
+
 /**
  * Formate une date ISO `YYYY-MM-DD` en `DD/MM/YYYY`.
  * Retourne la valeur d’origine si le format n’est pas reconnu.
@@ -73,15 +123,16 @@ async function render() {
           type === 'video'
             ? optimizeCloudinaryImage(m.url, CLOUDINARY_PRESETS.galleryPoster)
             : optimizeCloudinaryImage(m.url, CLOUDINARY_PRESETS.articleHero)
-        const optimizedThumb =
-          type === 'video'
-            ? optimizeCloudinaryImage(m.thumbUrl || m.url, CLOUDINARY_PRESETS.galleryThumb)
-            : optimizeCloudinaryImage(m.thumbUrl || m.url, CLOUDINARY_PRESETS.galleryThumb)
+        const posterUrl = resolveVideoPosterUrl(m.url, m.thumbUrl)
+        const optimizedThumb = optimizeCloudinaryImage(
+          type === 'video' ? posterUrl : m.thumbUrl || m.url,
+          CLOUDINARY_PRESETS.galleryThumb
+        )
         const u = JSON.stringify(optimizedMediaUrl)
         const t = JSON.stringify(optimizedThumb)
         return `
 				<button type="button" class="dv-media-thumb" data-media-modal data-media-type="${type}" data-media-url=${u}>
-					${type === 'video' ? `<video src=${u} muted playsinline preload="metadata"></video><span class="dv-media-thumb__play">▶</span>` : `<img src=${t} alt="" loading="lazy" decoding="async" />`}
+					${type === 'video' ? `<img src=${t} alt="" loading="lazy" decoding="async" /><span class="dv-media-thumb__play">▶</span>` : `<img src=${t} alt="" loading="lazy" decoding="async" />`}
 				</button>`
       })
       .join('')

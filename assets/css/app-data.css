@@ -686,6 +686,7 @@ html {
 .dv-index-media-carousel__viewport {
   overflow: hidden;
   width: min(100%, 750px);
+  min-height: 220px;
   max-width: 100%;
   margin-left: auto;
   margin-right: auto;
@@ -768,7 +769,7 @@ html {
  */
 .dv-index-media-carousel .dv-index-media-carousel__track > article .image {
   height: auto !important;
-  min-height: 0;
+  min-height: 220px;
   /* 1) But : la boîte média suit la largeur réelle du visuel (pas de “cadre blanc” latéral). */
   /* 2) Variables clés : `fit-content` + `max-width` pour rester responsive avec borne 750px. */
   /* 3) Flux : portrait = bloc plus étroit ; paysage = bloc élargi jusqu’à la limite autorisée. */
@@ -802,6 +803,10 @@ html {
   display: block;
   object-fit: contain;
   border-radius: 0;
+}
+
+.dv-index-media-carousel .dv-index-media-carousel__track > article .image .dv-media-thumb__play {
+  font-size: 2.5rem;
 }
 
 /* Conteneur slide : le bandeau est positionné en overlay sur la photo (plus en dessous dans le flux). */

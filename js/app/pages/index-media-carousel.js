@@ -18,6 +18,55 @@ function esc(s) {
   return d.innerHTML
 }
 
+function isDirectVideoFileUrl(url) {
+  return /\.(mp4|webm|ogg|mov)(\?|#|$)/i.test(String(url || ''))
+}
+
+function extractYouTubeId(url) {
+  const raw = String(url || '').trim()
+  const patterns = [
+    /youtube\.com\/watch\?v=([a-zA-Z0-9_-]{6,})/i,
+    /youtu\.be\/([a-zA-Z0-9_-]{6,})/i,
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]{6,})/i
+  ]
+  for (const re of patterns) {
+    const m = raw.match(re)
+    if (m?.[1]) {
+      return m[1]
+    }
+  }
+  return ''
+}
+
+function extractVimeoId(url) {
+  const raw = String(url || '').trim()
+  const m =
+    raw.match(/vimeo\.com\/(?:video\/)?(\d{6,})/i) ||
+    raw.match(/player\.vimeo\.com\/video\/(\d{6,})/i)
+  return m?.[1] || ''
+}
+
+/**
+ * 1) But : obtenir une image de prévisualisation vidéo fiable (embed YouTube/Vimeo compris).
+ * 2) Variables clés : thumbUrl (prioritaire), ytId, vimeoId.
+ * 3) Flux : thumb explicite -> provider thumbnail -> URL vide.
+ */
+function resolveVideoPosterUrl(videoUrl, thumbUrl) {
+  const explicit = String(thumbUrl || '').trim()
+  if (explicit) {
+    return explicit
+  }
+  const ytId = extractYouTubeId(videoUrl)
+  if (ytId) {
+    return `https://img.youtube.com/vi/${encodeURIComponent(ytId)}/hqdefault.jpg`
+  }
+  const vimeoId = extractVimeoId(videoUrl)
+  if (vimeoId) {
+    return `https://vumbnail.com/${encodeURIComponent(vimeoId)}.jpg`
+  }
+  return ''
+}
+
 /**
  * Construit le HTML d’une slide : zone média + bandeau optionnel (articles uniquement).
  *
@@ -29,14 +78,20 @@ function slideHtml(slide, isFixed) {
   const mediaUrl = isVideo
     ? optimizeCloudinaryImage(slide.url, CLOUDINARY_PRESETS.galleryPoster)
     : optimizeCloudinaryImage(slide.url, CLOUDINARY_PRESETS.articleHero)
+  const resolvedPoster = isVideo
+    ? resolveVideoPosterUrl(slide.url, slide.thumbUrl || slide.url)
+    : slide.thumbUrl || slide.url
   const poster = optimizeCloudinaryImage(
-    slide.thumbUrl || slide.url,
+    resolvedPoster,
     CLOUDINARY_PRESETS.galleryThumb
   )
   // Médias non visibles : pas de préchargement vidéo lourd ; le poster est préchargé côté JS (voisins).
   const videoPreload = 'none'
+  const useNativeVideoPlayer = isVideo && isDirectVideoFileUrl(mediaUrl)
   const mediaBlock = isVideo
-    ? `<video class="dv-index-media-carousel__video" src=${JSON.stringify(mediaUrl)} poster=${JSON.stringify(poster)} controls playsinline preload="${videoPreload}"></video>`
+    ? useNativeVideoPlayer
+      ? `<video class="dv-index-media-carousel__video" src=${JSON.stringify(mediaUrl)} poster=${JSON.stringify(poster)} controls playsinline preload="${videoPreload}"></video>`
+      : `<img src=${JSON.stringify(poster)} alt="" data-position="center" /><span class="dv-media-thumb__play">▶</span>`
     : `<img src=${JSON.stringify(poster)} alt="" data-position="center" />`
 
   const articleHref = slide.articleSlug
@@ -252,7 +307,8 @@ function runCarousel(section, dotsRoot) {
     let w = 0
     let h = 0
     if (natW > 0 && natH > 0) {
-      const scale = Math.min(maxW / natW, maxH / natH, 1)
+      // Autoriser l'agrandissement des miniatures trop petites (ex: thumbs YouTube).
+      const scale = Math.min(maxW / natW, maxH / natH)
       w = natW * scale
       h = natH * scale
     } else {
