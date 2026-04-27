@@ -140,28 +140,21 @@ async function uploadFileWithFeedback(file, folder) {
 }
 
 /**
- * Affiche un choix explicite "Importer" / "Lien" / "Annuler" pour l’insertion Quill.
+ * Affiche un choix explicite "Importer" / "Lien" / "Annuler" pour l’insertion d’image Quill.
  *
- * 1) But : éviter les boîtes natives confirm/prompt trop limitées (OK/Annuler).
- * 2) Variables clés :
- *    - kindLabel : texte affiché selon le média (image/vidéo).
- *    - resolveOnce : fermeture unique pour éviter les doubles résolutions.
- * 3) Flux :
- *    - création d’un overlay modal léger
- *    - clic bouton => mode choisi
- *    - Esc / clic fond => annulation propre
+ * 1) But : laisser l’admin choisir entre upload Cloudinary et URL externe pour les images.
+ * 2) Variables clés : resolveOnce pour fermeture unique + overlay modal.
+ * 3) Flux : clic bouton ou Esc -> fermeture -> renvoi du mode sélectionné.
  *
- * @param {'image'|'video'} kind
  * @returns {Promise<'file'|'url'|null>}
  */
-function askQuillInsertMode(kind) {
+function askQuillImageInsertMode() {
 	return new Promise((resolve) => {
-		const kindLabel = kind === 'video' ? 'vidéo' : 'image';
 		const overlay = document.createElement('div');
 		overlay.className = 'dv-admin-dialog';
 		overlay.innerHTML = `
-			<div class="dv-admin-dialog__panel" role="dialog" aria-modal="true" aria-label="Choisir une source ${kindLabel}">
-				<h4>Ajouter une ${kindLabel}</h4>
+			<div class="dv-admin-dialog__panel" role="dialog" aria-modal="true" aria-label="Choisir une source image">
+				<h4>Ajouter une image</h4>
 				<p>Choisissez la source du média à insérer dans l’éditeur.</p>
 				<div class="dv-admin-dialog__actions">
 					<button type="button" class="button primary" data-choice="file">Importer</button>
@@ -261,7 +254,7 @@ function attachQuillToolbarTooltips() {
 			return;
 		}
 		if (btn.classList.contains('ql-video')) {
-			setTip(btn, 'Insérer une vidéo (Importer ou Lien)');
+			setTip(btn, 'Insérer une vidéo (lien uniquement)');
 			return;
 		}
 		if (btn.classList.contains('ql-clean')) {
@@ -376,7 +369,7 @@ const quill = new Quill('#article-editor', {
 			],
 			handlers: {
 				async image() {
-					const mode = await askQuillInsertMode('image');
+					const mode = await askQuillImageInsertMode();
 					if (!mode) {
 						return;
 					}
@@ -395,22 +388,11 @@ const quill = new Quill('#article-editor', {
 					quill.insertEmbed(range.index, 'image', imageUrl);
 				},
 				async video() {
-					const mode = await askQuillInsertMode('video');
-					if (!mode) {
-						return;
-					}
-					let videoUrl = '';
-					if (mode === 'file') {
-						const file = await pickFileFromDevice('video/*');
-						const uploaded = await uploadFileWithFeedback(file, 'articles/editor/videos');
-						videoUrl = uploaded?.url || '';
-					} else {
-						videoUrl = String(
-							window.prompt(
-								'Collez une URL YouTube/Vimeo (page ou partage), une URL d’embed, ou un lien vidéo direct :'
-							) || ''
-						).trim();
-					}
+					const videoUrl = String(
+						window.prompt(
+							'Collez une URL YouTube/Vimeo (page ou partage), une URL d’embed, ou un lien vidéo direct :'
+						) || ''
+					).trim();
 					if (!videoUrl) {
 						return;
 					}
@@ -539,7 +521,26 @@ function resetArticleForm() {
  * @param {HTMLElement} row
  */
 function syncExtraMediaRowSource(row) {
-	const mode = row.querySelector('.extra-source-mode')?.value || 'url';
+	const modeSelect = row.querySelector('.extra-source-mode');
+	const typeSelect = row.querySelector('.extra-type');
+	const type = typeSelect?.value || 'image';
+	const fileInput = row.querySelector('.extra-file');
+	if (modeSelect) {
+		/**
+		 * 1) But : imposer la stratégie média des articles.
+		 * 2) Variables clés :
+		 *    - image => lien ou fichier (au choix admin)
+		 *    - video => lien uniquement (pas d’upload vidéo)
+		 * 3) Flux : changement type => verrouillage source seulement pour la vidéo.
+		 */
+		if (type === 'video') {
+			modeSelect.value = 'url';
+			modeSelect.disabled = true;
+		} else {
+			modeSelect.disabled = false;
+		}
+	}
+	const mode = modeSelect?.value || 'url';
 	const urlWrap = row.querySelector('.extra-url-wrap');
 	const fileWrap = row.querySelector('.extra-file-wrap');
 	if (urlWrap) {
@@ -547,6 +548,9 @@ function syncExtraMediaRowSource(row) {
 	}
 	if (fileWrap) {
 		fileWrap.hidden = mode !== 'file';
+	}
+	if (fileInput) {
+		fileInput.setAttribute('accept', 'image/*');
 	}
 }
 
@@ -569,9 +573,8 @@ function addExtraMediaRow(url = '', type = 'image', caption = '') {
 		<input type="text" placeholder="Légende" class="extra-cap" value="${caption.replace(/"/g, '&quot;')}" />
 		<button type="button" class="button small extra-rm" aria-label="Supprimer le média">Supprimer le média</button>
 	`;
-	row.querySelector('.extra-source-mode')?.addEventListener('change', () => {
-		syncExtraMediaRowSource(row);
-	});
+	row.querySelector('.extra-source-mode')?.addEventListener('change', () => syncExtraMediaRowSource(row));
+	row.querySelector('.extra-type')?.addEventListener('change', () => syncExtraMediaRowSource(row));
 	row.querySelector('.extra-rm').onclick = () => row.remove();
 	syncExtraMediaRowSource(row);
 	wrap.appendChild(row);
@@ -634,7 +637,8 @@ document.getElementById('btn-save-article')?.addEventListener('click', async () 
 	// 2) Si fichier => upload immédiat via provider actif pour obtenir l’URL finale à stocker.
 	const rows = Array.from(document.querySelectorAll('#extra-media-rows .dv-admin__extra-row'));
 	for (const row of rows) {
-		const mode = row.querySelector('.extra-source-mode')?.value || 'url';
+		const type = row.querySelector('.extra-type')?.value || 'image';
+		const mode = row.querySelector('.extra-source-mode')?.value || (type === 'video' ? 'url' : 'file');
 		let url = '';
 		if (mode === 'file') {
 			const file = row.querySelector('.extra-file')?.files?.[0] || null;
@@ -643,12 +647,16 @@ document.getElementById('btn-save-article')?.addEventListener('click', async () 
 		} else {
 			url = row.querySelector('.extra-url')?.value.trim() || '';
 		}
+		if (type === 'video' && mode !== 'url') {
+			window.alert('Pour les articles, les vidéos doivent être saisies par lien.');
+			return;
+		}
 		if (!url) {
 			continue;
 		}
 		fromEditor.push({
 			url,
-			type: row.querySelector('.extra-type')?.value || 'image',
+			type,
 			caption: row.querySelector('.extra-cap')?.value.trim() || '',
 		});
 	}
