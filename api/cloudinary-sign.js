@@ -22,6 +22,23 @@ function sanitizeFileName(value) {
 }
 
 /**
+ * Génère une signature Cloudinary conforme (tri alpha des clés, concat key=value avec &).
+ *
+ * @param {Record<string, string|number|boolean|null|undefined>} params
+ * @param {string} apiSecret
+ * @returns {{ signature: string, stringToSign: string }}
+ */
+function signCloudinaryParams(params, apiSecret) {
+	const stringToSign = Object.keys(params)
+		.sort()
+		.filter((key) => params[key] !== undefined && params[key] !== null && params[key] !== '')
+		.map((key) => `${key}=${params[key]}`)
+		.join('&');
+	const signature = crypto.createHash('sha1').update(`${stringToSign}${apiSecret}`).digest('hex');
+	return { signature, stringToSign };
+}
+
+/**
  * Vérifie le token Firebase via l'API REST Identity Toolkit.
  *
  * 1) But:
@@ -107,9 +124,15 @@ module.exports = async function handler(req, res) {
 	const fileName = sanitizeFileName(req.body?.fileName || 'media');
 	const timestamp = Math.floor(Date.now() / 1000);
 	const publicId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${fileName}`;
+	const resourceType = 'auto';
 
-	const paramsToSign = `folder=${folder}&public_id=${publicId}&timestamp=${timestamp}`;
-	const signature = crypto.createHash('sha1').update(`${paramsToSign}${apiSecret}`).digest('hex');
+	const signedParams = {
+		folder,
+		public_id: publicId,
+		resource_type: resourceType,
+		timestamp,
+	};
+	const { signature, stringToSign } = signCloudinaryParams(signedParams, apiSecret);
 
 	return res.status(200).json({
 		ok: true,
@@ -119,6 +142,8 @@ module.exports = async function handler(req, res) {
 		signature,
 		folder,
 		publicId,
-		uploadUrl: `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
+		resourceType,
+		stringToSign,
+		uploadUrl: `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
 	});
 };

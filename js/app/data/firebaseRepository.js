@@ -168,6 +168,7 @@ export async function uploadMediaAsset(file, opts = {}) {
 	formData.append('signature', signatureData.signature);
 	formData.append('folder', signatureData.folder);
 	formData.append('public_id', signatureData.publicId);
+	formData.append('resource_type', signatureData.resourceType || 'auto');
 
 	const uploadResponse = await fetch(signatureData.uploadUrl, {
 		method: 'POST',
