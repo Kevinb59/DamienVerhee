@@ -2001,6 +2001,23 @@ html {
   font-size: 0.95rem;
 }
 
+/* Bloc produit : mode source couverture compact + alignement champ fichier sur la même ligne logique que la source. */
+.dv-admin__field--image-source select {
+  /* 1) But : éviter qu'une simple liste "Lien/Fichier" prenne 50% de la grille. */
+  /* 2) Variables clés : largeur max fixe et fallback responsive. */
+  /* 3) Flux : sur desktop, le select reste compact ; sur mobile, il reprend 100%. */
+  width: min(100%, 12rem);
+}
+
+#prod-image-file-wrap input[type='file'] {
+  /* 1) But : conserver le bouton natif + nom du fichier sur une seule ligne quand c'est possible. */
+  /* 2) Variables clés : largeur max modérée et bloc aligné avec les autres champs. */
+  /* 3) Flux : le contrôle ne "descend" plus visuellement en dehors de la rangée source. */
+  width: min(100%, 22rem);
+  max-width: 100%;
+  display: block;
+}
+
 .dv-admin__grid-2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
