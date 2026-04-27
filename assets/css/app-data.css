@@ -426,6 +426,7 @@ html {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   overflow: hidden;
 }
 
@@ -632,6 +633,35 @@ html {
 .dv-index-contact__form .actions {
   margin-top: 0.35rem;
   margin-bottom: 0;
+}
+
+.dv-contact-hp {
+  /* 1) But : rendre le honeypot inaccessible visuellement tout en le laissant détectable côté soumission. */
+  /* 2) Variables clés : position absolue hors écran + taille minimale. */
+  /* 3) Flux : les utilisateurs humains ne voient pas le champ, les bots auto-fill le révèlent. */
+  position: absolute !important;
+  left: -9999px !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+}
+
+.dv-contact-status {
+  /* 1) But : afficher un feedback compact sous le bouton sans casser la grille du formulaire. */
+  /* 2) Variables clés : marge courte + taille de texte lisible + hauteur minimale stable. */
+  /* 3) Flux : même espace réservé pendant chargement, succès et erreur. */
+  margin: 0.45rem 0 0;
+  min-height: 1.35rem;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.dv-contact-status.is-success {
+  color: #2d7a54;
+}
+
+.dv-contact-status.is-error {
+  color: #c64d4d;
 }
 
 @media screen and (max-width: 980px) {

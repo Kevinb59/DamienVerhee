@@ -232,9 +232,14 @@
                 <form
                   method="post"
                   action="#"
+                  id="contact-author-form"
                   class="dv-index-contact__form"
                   aria-label="Formulaire de contact auteur"
+                  data-contact-target="author"
                 >
+                  <!-- Anti-spam : champ honeypot invisible + timestamp de rendu pour contrôle de délai minimum. -->
+                  <input type="text" name="website" tabindex="-1" autocomplete="off" class="dv-contact-hp" aria-hidden="true" />
+                  <input type="hidden" name="form-loaded-at" value="" />
                   <div class="row gtr-uniform">
                     <div class="col-6 col-12-xsmall">
                       <input
@@ -273,8 +278,9 @@
                     </div>
                     <div class="col-12">
                       <ul class="actions">
-                        <li><input type="submit" value="Envoyer" class="primary" /></li>
+                        <li><input type="submit" value="Envoyer" class="primary" data-default-label="Envoyer" /></li>
                       </ul>
+                      <p class="dv-contact-status" aria-live="polite"></p>
                     </div>
                   </div>
                 </form>
@@ -286,9 +292,14 @@
                 <form
                   method="post"
                   action="#"
+                  id="contact-publisher-form"
                   class="dv-index-contact__form"
                   aria-label="Formulaire de contact maison d’édition NomBre7"
+                  data-contact-target="publisher"
                 >
+                  <!-- Anti-spam : champ honeypot invisible + timestamp de rendu pour contrôle de délai minimum. -->
+                  <input type="text" name="website" tabindex="-1" autocomplete="off" class="dv-contact-hp" aria-hidden="true" />
+                  <input type="hidden" name="form-loaded-at" value="" />
                   <div class="row gtr-uniform">
                     <div class="col-6 col-12-xsmall">
                       <input
@@ -327,8 +338,9 @@
                     </div>
                     <div class="col-12">
                       <ul class="actions">
-                        <li><input type="submit" value="Envoyer à NomBre7" class="primary" /></li>
+                        <li><input type="submit" value="Envoyer à NomBre7" class="primary" data-default-label="Envoyer à NomBre7" /></li>
                       </ul>
+                      <p class="dv-contact-status" aria-live="polite"></p>
                     </div>
                   </div>
                 </form>
@@ -407,5 +419,6 @@
       type="module"
       src="js/app/pages/index-spotlights-section.js"
     ></script>
+    <script type="module" src="js/app/pages/index-contact-forms.js"></script>
   </body>
 </html>

@@ -1,2 +1,9 @@
 # Gabarits lourds (limite GitHub 100 Mo) — garder en local uniquement
 images/ressources/*.psd
+ressources/
+instructions/
+
+# Variables locales
+.env
+.env.local
+.env.*.local
