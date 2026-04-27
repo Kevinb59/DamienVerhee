@@ -1,4 +1,5 @@
 import { SITE_CONTENT } from './site-content.generated.js'
+import { DYNAMIC_GALLERY_ALBUM_ID } from '../config.js'
 
 /**
  * 1) But : fournir un repository 100% lecture pour le site public.
@@ -84,7 +85,7 @@ export async function listDynamicGalleryItems() {
     for (const m of medias) {
       out.push({
         id: `dyn_${a.id}_${m.id}`,
-        albumId: '__virtual_dynamic__',
+        albumId: DYNAMIC_GALLERY_ALBUM_ID,
         type: m.type === 'video' ? 'video' : 'image',
         url: m.url,
         thumbUrl: m.thumbUrl || m.url,

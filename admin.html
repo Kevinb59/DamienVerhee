@@ -316,7 +316,9 @@
                 </div>
 
                 <h3 class="dv-admin__section-label">Médias de l’album</h3>
-                <p class="dv-hint">Glisser-déposer pour réordonner.</p>
+                <p class="dv-hint" id="admin-gallery-items-hint">
+                  Glisser-déposer pour réordonner les albums éditables.
+                </p>
                 <div
                   id="admin-gallery-items"
                   class="dv-admin__gallery-items"
@@ -324,17 +326,33 @@
 
                 <!-- Même logique que les autres onglets : ajout média dans un bandeau couleur dédié sous le bloc principal. -->
                 <section
+                  id="admin-gallery-add-band"
                   class="dv-admin__gallery-add-band"
                   aria-labelledby="gallery-add-heading"
                 >
                   <header class="major dv-admin__gallery-add-head">
                     <h3 id="gallery-add-heading">Ajouter un média</h3>
                     <p>
-                      Choisissez un type, puis ajoutez soit un lien soit un
-                      fichier local, avec légende optionnelle.
+                      Image : lien ou fichier. Vidéo : lien uniquement (URL
+                      directe ou embed YouTube / Vimeo). Choisissez l’album de
+                      destination, légende optionnelle.
                     </p>
                   </header>
                   <div class="dv-admin__add-media-row">
+                    <div class="dv-admin__field dv-admin__field--grow">
+                      <label for="gitem-target-album">Album de destination</label>
+                      <select id="gitem-target-album" aria-describedby="gitem-target-album-hint"></select>
+                      <p id="gitem-target-album-hint" class="dv-hint dv-admin__field-hint">
+                        Les médias issus des articles sont listés dans « Médias articles » (non modifiable ici).
+                      </p>
+                    </div>
+                    <div class="dv-admin__field">
+                      <label for="gitem-type">Type</label>
+                      <select id="gitem-type">
+                        <option value="image">Image</option>
+                        <option value="video">Vidéo</option>
+                      </select>
+                    </div>
                     <div class="dv-admin__field">
                       <label for="gitem-source-mode">Source</label>
                       <select id="gitem-source-mode">
@@ -348,9 +366,9 @@
                     >
                       <label for="gitem-url">Lien</label>
                       <input
-                        type="url"
+                        type="text"
                         id="gitem-url"
-                        placeholder="URL Média"
+                        placeholder="URL ou embed (YouTube / Vimeo…)"
                       />
                     </div>
                     <div
@@ -359,18 +377,7 @@
                       hidden
                     >
                       <label for="gitem-file">Fichier</label>
-                      <input
-                        type="file"
-                        id="gitem-file"
-                        accept="image/*,video/*"
-                      />
-                    </div>
-                    <div class="dv-admin__field">
-                      <label for="gitem-type">Type</label>
-                      <select id="gitem-type">
-                        <option value="image">Image</option>
-                        <option value="video">Vidéo</option>
-                      </select>
+                      <input type="file" id="gitem-file" accept="image/*" />
                     </div>
                     <div class="dv-admin__field dv-admin__field--grow">
                       <label for="gitem-cap">Légende</label>
@@ -378,7 +385,11 @@
                         type="text"
                         id="gitem-cap"
                         placeholder="Légende optionnelle"
+                        aria-describedby="gitem-cap-hint"
                       />
+                      <p id="gitem-cap-hint" class="dv-hint dv-admin__field-hint">
+                        Texte affiché dans la liste admin (aperçu + accessibilité). Non affiché sur la grille publique actuelle.
+                      </p>
                     </div>
                     <div class="dv-admin__field dv-admin__field--action">
                       <span class="dv-admin__fake-label" aria-hidden="true"

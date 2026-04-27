@@ -2,6 +2,7 @@
  * Galerie publique : flux unique de miniatures (médias articles + albums fixes).
  */
 import { listDynamicGalleryItems, listGalleryAlbums, listGalleryItems } from '../store.js'
+import { DYNAMIC_GALLERY_ALBUM_ID } from '../config.js'
 import { initMediaModal } from '../ui/mediaModal.js'
 import { CLOUDINARY_PRESETS, optimizeCloudinaryImage } from '../cloudinary.js'
 
@@ -12,7 +13,6 @@ function esc(s) {
 } 
 
 const ALBUM_ALL = '__all__'
-const ALBUM_ARTICLES = '__articles__'
 
 /**
  * Rend uniquement les miniatures carrées (sans descriptions).
@@ -50,7 +50,7 @@ function renderThumbs(items) {
 async function loadCombinedMedia() {
   const out = []
 
-  // 1) Bloc dynamique : "Articles" = album virtuel unique pour tous les médias extraits d’articles.
+  // 1) Bloc dynamique : « Médias articles » = album virtuel (tous les médias extraits des articles publiés).
   const dynamicItems = await listDynamicGalleryItems()
   dynamicItems.forEach((m) => {
     out.push({
@@ -58,8 +58,8 @@ async function loadCombinedMedia() {
       url: m.url,
       thumbUrl: m.thumbUrl || m.url,
       sortAt: String(m.articleUpdatedAt || ''),
-      albumId: ALBUM_ARTICLES,
-      albumLabel: 'Articles'
+      albumId: DYNAMIC_GALLERY_ALBUM_ID,
+      albumLabel: 'Médias articles'
     })
   })
 
@@ -121,10 +121,10 @@ async function init() {
   root.innerHTML = '<p>Chargement…</p>'
   const allMedia = await loadCombinedMedia()
 
-  // 1) Sources d’album : "Tous" + "Articles" + albums fixes (ordre admin).
+  // 1) Sources d’album : « Tous » + « Médias articles » + albums fixes (ordre admin).
   const options = [
     { value: ALBUM_ALL, label: 'Tous les médias' },
-    { value: ALBUM_ARTICLES, label: 'Articles' }
+    { value: DYNAMIC_GALLERY_ALBUM_ID, label: 'Médias articles' }
   ]
   const fixedAlbums = await listGalleryAlbums()
   fixedAlbums.forEach((a) => {

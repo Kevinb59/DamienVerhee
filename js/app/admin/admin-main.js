@@ -11,6 +11,7 @@ import {
 	saveGalleryAlbum,
 	deleteGalleryAlbum,
 	listGalleryItems,
+	listDynamicGalleryItems,
 	saveGalleryItem,
 	deleteGalleryItem,
 	reorderGalleryItems,
@@ -20,6 +21,8 @@ import {
 	deleteProduct,
 	uploadMediaAsset,
 } from '../store.js';
+import { DYNAMIC_GALLERY_ALBUM_ID } from '../config.js';
+import { resolveVideoPosterUrl } from '../video-poster.js';
 import { extractMediaFromHtml, mergeArticleMedia } from '../mediaextract.js';
 import { setupQuillMediaResize } from './quill-media-resize.js';
 import { normalizeVideoEmbedUrl } from './video-embed-url.js';
@@ -698,27 +701,113 @@ document.getElementById('btn-save-article')?.addEventListener('click', async () 
 // ——— Galerie fixe : albums + tri ———
 let galleryAlbumId = null;
 
-async function refreshGalleryAdmin() {
-	const albumSel = document.getElementById('admin-gallery-album');
-	const listEl = document.getElementById('admin-gallery-items');
-	if (!albumSel || !listEl) {
+/**
+ * Remplit le sélecteur « album cible » pour l’ajout (albums Firestore uniquement, pas l’album virtuel).
+ *
+ * 1) But : choisir explicitement l’album de destination sans confondre avec « Médias articles ».
+ * 2) Variables clés : `albums` (liste serveur), `galleryAlbumId` (album actuellement affiché).
+ * 3) Flux : options -> valeur par défaut alignée sur l’album actif s’il est éditable, sinon premier album.
+ *
+ * @param {Array<{ id: string, title?: string }>} albums
+ */
+function fillGitemTargetAlbumSelect(albums) {
+	const sel = document.getElementById('gitem-target-album');
+	if (!sel) {
 		return;
 	}
-	const albums = await listGalleryAlbums();
-	albumSel.innerHTML = '';
+	const prev = sel.value;
+	sel.innerHTML = '';
 	for (const a of albums) {
 		const o = document.createElement('option');
 		o.value = a.id;
-		o.textContent = a.title;
+		o.textContent = a.title || 'Album';
+		sel.appendChild(o);
+	}
+	const ids = albums.map((a) => a.id);
+	if (ids.length === 0) {
+		const o = document.createElement('option');
+		o.value = '';
+		o.textContent = '— Créez un album —';
+		sel.appendChild(o);
+		sel.disabled = true;
+		return;
+	}
+	sel.disabled = false;
+	if (prev && ids.includes(prev)) {
+		sel.value = prev;
+		return;
+	}
+	if (galleryAlbumId !== DYNAMIC_GALLERY_ALBUM_ID && ids.includes(galleryAlbumId)) {
+		sel.value = galleryAlbumId;
+		return;
+	}
+	sel.value = ids[0];
+}
+
+/**
+ * Affiche ou masque l’UI d’édition selon que l’album actif est le virtuel « Médias articles ».
+ *
+ * 1) But : album virtuel = lecture seule (pas d’ajout, pas de suppression d’album, pas de tri).
+ * 2) Variables clés : `galleryAlbumId`, `DYNAMIC_GALLERY_ALBUM_ID`.
+ * 3) Flux : bascule bandeau d’ajout + bouton supprimer album + texte d’aide liste.
+ */
+function syncGalleryVirtualAlbumUi() {
+	const isVirtual = galleryAlbumId === DYNAMIC_GALLERY_ALBUM_ID;
+	const addBand = document.getElementById('admin-gallery-add-band');
+	if (addBand) {
+		addBand.hidden = isVirtual;
+	}
+	const delAlbum = document.getElementById('btn-del-album');
+	if (delAlbum) {
+		delAlbum.disabled = isVirtual;
+		delAlbum.title = isVirtual
+			? 'Album « Médias articles » : suppression impossible'
+			: '';
+	}
+	const hint = document.getElementById('admin-gallery-items-hint');
+	if (hint) {
+		hint.textContent = isVirtual
+			? 'Médias extraits des articles publiés (lecture seule, non réordonnables ici).'
+			: 'Glisser-déposer pour réordonner les médias de cet album.';
+	}
+}
+
+async function refreshGalleryAdmin() {
+	const albumSel = document.getElementById('admin-gallery-album');
+	if (!albumSel) {
+		return;
+	}
+	const albums = await listGalleryAlbums();
+	const prevSelection = galleryAlbumId;
+	albumSel.innerHTML = '';
+
+	const optDyn = document.createElement('option');
+	optDyn.value = DYNAMIC_GALLERY_ALBUM_ID;
+	optDyn.textContent = 'Médias articles';
+	albumSel.appendChild(optDyn);
+
+	for (const a of albums) {
+		const o = document.createElement('option');
+		o.value = a.id;
+		o.textContent = a.title || 'Album';
 		albumSel.appendChild(o);
 	}
-	if (albums.length) {
+
+	const optionIds = [DYNAMIC_GALLERY_ALBUM_ID, ...albums.map((x) => x.id)];
+	if (prevSelection && optionIds.includes(prevSelection)) {
+		galleryAlbumId = prevSelection;
+		albumSel.value = galleryAlbumId;
+	} else if (albums.length) {
 		galleryAlbumId = albums[0].id;
 		albumSel.value = galleryAlbumId;
-		await renderGalleryItemsList();
 	} else {
-		listEl.innerHTML = '<p class="dv-admin__empty-msg">Créez un album ci-dessous.</p>';
+		galleryAlbumId = DYNAMIC_GALLERY_ALBUM_ID;
+		albumSel.value = galleryAlbumId;
 	}
+
+	fillGitemTargetAlbumSelect(albums);
+	syncGalleryVirtualAlbumUi();
+	await renderGalleryItemsList();
 }
 
 /**
@@ -812,14 +901,25 @@ function mountGalleryItemThumb(wrap, it) {
 
 async function renderGalleryItemsList() {
 	const listEl = document.getElementById('admin-gallery-items');
-	if (!galleryAlbumId) {
+	if (!galleryAlbumId || !listEl) {
 		return;
 	}
-	const items = await listGalleryItems(galleryAlbumId);
+
+	/**
+	 * 1) But : l’album « Médias articles » agrège les médias Firestore des articles (pas `galleryItems`).
+	 * 2) Variables clés : `DYNAMIC_GALLERY_ALBUM_ID`, `listDynamicGalleryItems`.
+	 * 3) Flux : sinon lecture classique `listGalleryItems(albumId)` + tri drag-and-drop.
+	 */
+	const isVirtualAlbum = galleryAlbumId === DYNAMIC_GALLERY_ALBUM_ID;
+	const items = isVirtualAlbum
+		? await listDynamicGalleryItems()
+		: await listGalleryItems(galleryAlbumId);
+
 	listEl.innerHTML = '';
 	const ul = document.createElement('ul');
 	ul.id = 'sort-gallery-items';
 	ul.className = 'dv-admin__sortable-list dv-admin__sortable-list--gallery';
+
 	items.forEach((it) => {
 		const li = document.createElement('li');
 		li.className = 'dv-admin__gitem-li';
@@ -845,14 +945,23 @@ async function renderGalleryItemsList() {
 		meta.appendChild(typeEl);
 		meta.appendChild(capEl);
 
+		if (isVirtualAlbum && it.articleTitle) {
+			const artEl = document.createElement('p');
+			artEl.className = 'dv-admin__gitem-article';
+			artEl.textContent = `Article : ${it.articleTitle}`;
+			meta.appendChild(artEl);
+		}
+
 		const actions = document.createElement('div');
 		actions.className = 'dv-admin__gitem-actions';
-		const delBtn = document.createElement('button');
-		delBtn.type = 'button';
-		delBtn.className = 'button small';
-		delBtn.dataset.delGitem = it.id;
-		delBtn.textContent = 'Supprimer';
-		actions.appendChild(delBtn);
+		if (!isVirtualAlbum) {
+			const delBtn = document.createElement('button');
+			delBtn.type = 'button';
+			delBtn.className = 'button small';
+			delBtn.dataset.delGitem = it.id;
+			delBtn.textContent = 'Supprimer';
+			actions.appendChild(delBtn);
+		}
 
 		row.appendChild(thumbWrap);
 		row.appendChild(meta);
@@ -860,9 +969,20 @@ async function renderGalleryItemsList() {
 		li.appendChild(row);
 		ul.appendChild(li);
 	});
+
+	if (!items.length) {
+		const empty = document.createElement('p');
+		empty.className = 'dv-admin__empty-msg';
+		empty.textContent = isVirtualAlbum
+			? 'Aucun média issu d’article pour le moment.'
+			: 'Aucun média dans cet album.';
+		listEl.appendChild(empty);
+		return;
+	}
+
 	listEl.appendChild(ul);
 
-	if (typeof Sortable !== 'undefined') {
+	if (!isVirtualAlbum && typeof Sortable !== 'undefined') {
 		if (ul._dvSortable) {
 			ul._dvSortable.destroy();
 		}
@@ -889,6 +1009,7 @@ async function renderGalleryItemsList() {
 
 document.getElementById('admin-gallery-album')?.addEventListener('change', async (e) => {
 	galleryAlbumId = e.target.value;
+	syncGalleryVirtualAlbumUi();
 	await renderGalleryItemsList();
 });
 
@@ -901,6 +1022,10 @@ document.getElementById('btn-new-album')?.addEventListener('click', async () => 
 });
 
 document.getElementById('btn-del-album')?.addEventListener('click', async () => {
+	if (galleryAlbumId === DYNAMIC_GALLERY_ALBUM_ID) {
+		window.alert('« Médias articles » est un album virtuel : il ne peut pas être supprimé.');
+		return;
+	}
 	if (!galleryAlbumId || !window.confirm('Supprimer cet album et son contenu ?')) {
 		return;
 	}
@@ -923,34 +1048,84 @@ function syncGallerySourceMode() {
 	}
 }
 
+/**
+ * Vidéo : source « fichier » interdite (embed / URL uniquement), comme demandé côté admin.
+ *
+ * 1) But : aligner l’UI sur la règle métier (images = lien ou fichier ; vidéos = lien seul).
+ * 2) Variables clés : `gitem-type`, option `file` du sélecteur source.
+ * 3) Flux : si vidéo -> forcer URL + désactiver fichier + vider l’input file.
+ */
+function syncGalleryItemTypeMode() {
+	const type = document.getElementById('gitem-type')?.value || 'image';
+	const modeSel = document.getElementById('gitem-source-mode');
+	const fileOpt = modeSel?.querySelector('option[value="file"]');
+	const fileInput = document.getElementById('gitem-file');
+	if (type === 'video') {
+		if (fileOpt) {
+			fileOpt.disabled = true;
+		}
+		if (modeSel && modeSel.value === 'file') {
+			modeSel.value = 'url';
+		}
+		if (fileInput) {
+			fileInput.value = '';
+		}
+	} else if (fileOpt) {
+		fileOpt.disabled = false;
+	}
+	syncGallerySourceMode();
+}
+
 document.getElementById('gitem-source-mode')?.addEventListener('change', syncGallerySourceMode);
+document.getElementById('gitem-type')?.addEventListener('change', syncGalleryItemTypeMode);
 
 document.getElementById('btn-add-gitem')?.addEventListener('click', async () => {
-	if (!galleryAlbumId) {
-		window.alert('Choisissez ou créez un album.');
+	const targetAlbum = document.getElementById('gitem-target-album')?.value?.trim() || '';
+	if (!targetAlbum) {
+		window.alert('Créez d’abord un album pour y ajouter des médias.');
+		return;
+	}
+	if (targetAlbum === DYNAMIC_GALLERY_ALBUM_ID) {
+		window.alert(
+			'« Médias articles » est rempli automatiquement depuis les articles. Choisissez un autre album.',
+		);
 		return;
 	}
 
-	// 1) Source galerie : lien direct OU fichier local.
+	const type = document.getElementById('gitem-type')?.value || 'image';
 	const sourceMode = document.getElementById('gitem-source-mode')?.value || 'url';
+
+	if (type === 'video' && sourceMode === 'file') {
+		window.alert('Pour une vidéo, utilisez uniquement un lien (fichier non pris en charge ici).');
+		return;
+	}
+
+	// 1) Source galerie : lien direct OU fichier local (images uniquement).
 	let url = '';
 	if (sourceMode === 'file') {
 		const file = document.getElementById('gitem-file')?.files?.[0] || null;
 		const uploaded = await uploadFileWithFeedback(file, 'gallery/fixed');
 		url = uploaded?.url || '';
 	} else {
-		url = document.getElementById('gitem-url').value.trim();
+		url = document.getElementById('gitem-url')?.value.trim() || '';
+	}
+	if (type === 'video') {
+		url = normalizeVideoEmbedUrl(url) || url;
 	}
 	if (!url) {
+		window.alert('Indiquez une URL ou choisissez un fichier image.');
 		return;
 	}
-	const type = document.getElementById('gitem-type').value;
+
+	const poster =
+		type === 'video' ? resolveVideoPosterUrl(url, '') || url : url;
+
 	await saveGalleryItem({
-		albumId: galleryAlbumId,
+		albumId: targetAlbum,
 		url,
 		type,
-		thumbUrl: url,
-		caption: document.getElementById('gitem-cap').value.trim(),
+		thumbUrl: poster,
+		caption: document.getElementById('gitem-cap')?.value.trim() || '',
 	});
 	document.getElementById('gitem-url').value = '';
 	const gitemFile = document.getElementById('gitem-file');

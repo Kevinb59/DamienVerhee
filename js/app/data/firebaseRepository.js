@@ -1,4 +1,4 @@
-import { getFirebaseClientConfig } from '../config.js';
+import { getFirebaseClientConfig, DYNAMIC_GALLERY_ALBUM_ID } from '../config.js';
 
 let firebaseCoreCtx = null;
 
@@ -309,6 +309,9 @@ export async function listGalleryAlbums() {
  */
 export async function saveGalleryAlbum(album) {
 	const { db, fsApi } = await getFirebaseCoreContext();
+	if (album.id === DYNAMIC_GALLERY_ALBUM_ID) {
+		throw new Error('Album réservé « Médias articles » : modification impossible.');
+	}
 	const albums = await listGalleryAlbums();
 	if (album.id) {
 		const ref = fsApi.doc(db, 'galleryAlbums', album.id);
@@ -333,6 +336,9 @@ export async function saveGalleryAlbum(album) {
  * @returns {Promise<void>}
  */
 export async function deleteGalleryAlbum(id) {
+	if (id === DYNAMIC_GALLERY_ALBUM_ID) {
+		throw new Error('Album virtuel « Médias articles » : suppression impossible.');
+	}
 	const { db, fsApi } = await getFirebaseCoreContext();
 	await fsApi.deleteDoc(fsApi.doc(db, 'galleryAlbums', id));
 
@@ -369,6 +375,9 @@ export async function saveGalleryItem(item) {
 	const { db, fsApi } = await getFirebaseCoreContext();
 	if (!item.albumId) {
 		throw new Error('albumId requis');
+	}
+	if (item.albumId === DYNAMIC_GALLERY_ALBUM_ID) {
+		throw new Error('Album « Médias articles » : enregistrement interdit (contenu issu des articles).');
 	}
 	if (item.id) {
 		const ref = fsApi.doc(db, 'galleryItems', item.id);
@@ -506,7 +515,7 @@ export async function listDynamicGalleryItems() {
 		for (const m of medias) {
 			out.push({
 				id: `dyn_${a.id}_${m.id}`,
-				albumId: '__virtual_dynamic__',
+				albumId: DYNAMIC_GALLERY_ALBUM_ID,
 				type: m.type === 'video' ? 'video' : 'image',
 				url: m.url,
 				thumbUrl: m.thumbUrl || m.url,
