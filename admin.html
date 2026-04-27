@@ -313,6 +313,13 @@
                     <button
                       type="button"
                       class="button small"
+                      id="btn-rename-album"
+                    >
+                      Renommer
+                    </button>
+                    <button
+                      type="button"
+                      class="button small"
                       id="btn-del-album"
                     >
                       Supprimer
@@ -322,7 +329,7 @@
 
                 <h3 class="dv-admin__section-label">Médias de l’album</h3>
                 <p class="dv-hint" id="admin-gallery-items-hint">
-                  Glisser-déposer pour réordonner les albums éditables.
+                  Glisser-déposer pour réordonner les médias de cet album.
                 </p>
                 <div
                   id="admin-gallery-items"
@@ -346,10 +353,7 @@
                   <div class="dv-admin__add-media-row">
                     <div class="dv-admin__field dv-admin__field--grow">
                       <label for="gitem-target-album">Album de destination</label>
-                      <select id="gitem-target-album" aria-describedby="gitem-target-album-hint"></select>
-                      <p id="gitem-target-album-hint" class="dv-hint dv-admin__field-hint">
-                        Les médias issus des articles sont listés dans « Médias articles » (non modifiable ici).
-                      </p>
+                      <select id="gitem-target-album"></select>
                     </div>
                     <div class="dv-admin__field">
                       <label for="gitem-type">Type</label>
@@ -390,11 +394,7 @@
                         type="text"
                         id="gitem-cap"
                         placeholder="Légende optionnelle"
-                        aria-describedby="gitem-cap-hint"
                       />
-                      <p id="gitem-cap-hint" class="dv-hint dv-admin__field-hint">
-                        Texte affiché dans la liste admin (aperçu + accessibilité). Non affiché sur la grille publique actuelle.
-                      </p>
                     </div>
                     <div class="dv-admin__field dv-admin__field--action">
                       <span class="dv-admin__fake-label" aria-hidden="true"

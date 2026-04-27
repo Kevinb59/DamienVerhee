@@ -137,9 +137,12 @@ async function uploadFileWithFeedback(file, folder) {
 	try {
 		return await uploadMediaAsset(file, { folder });
 	} catch (err) {
-		const msg = err instanceof Error ? err.message : 'Erreur d’upload.'
-		window.alert(`Upload impossible : ${msg}`)
-		return null
+		const msg = err instanceof Error ? err.message : String(err);
+		console.error('Upload média:', msg);
+		window.alert(
+			"Impossible d'envoyer le fichier. Réessayez, ou choisissez une image par lien à la place.",
+		);
+		return null;
 	}
 }
 
@@ -159,9 +162,9 @@ function askQuillImageInsertMode() {
 		overlay.innerHTML = `
 			<div class="dv-admin-dialog__panel" role="dialog" aria-modal="true" aria-label="Choisir une source image">
 				<h4>Ajouter une image</h4>
-				<p>Choisissez la source du média à insérer dans l’éditeur.</p>
+				<p>Depuis votre ordinateur ou avec une adresse web ?</p>
 				<div class="dv-admin-dialog__actions">
-					<button type="button" class="button primary" data-choice="file">Importer</button>
+					<button type="button" class="button primary" data-choice="file">Ordinateur</button>
 					<button type="button" class="button" data-choice="url">Lien</button>
 					<button type="button" class="button" data-choice="cancel">Annuler</button>
 				</div>
@@ -383,7 +386,7 @@ const quill = new Quill('#article-editor', {
 						const uploaded = await uploadFileWithFeedback(file, 'articles/editor/images');
 						imageUrl = uploaded?.url || '';
 					} else {
-						imageUrl = String(window.prompt('Collez le lien de l’image :') || '').trim();
+						imageUrl = String(window.prompt('Adresse web (URL) de l’image :') || '').trim();
 					}
 					if (!imageUrl) {
 						return;
@@ -394,8 +397,8 @@ const quill = new Quill('#article-editor', {
 				async video() {
 					const videoUrl = String(
 						window.prompt(
-							'Collez une URL YouTube/Vimeo (page ou partage), une URL d’embed, ou un lien vidéo direct :'
-						) || ''
+							'Lien de la vidéo (YouTube, Vimeo ou adresse directe du fichier) :',
+						) || '',
 					).trim();
 					if (!videoUrl) {
 						return;
@@ -619,16 +622,23 @@ document.getElementById('admin-article-list')?.addEventListener('click', async (
 		const titleEl = del.closest('li')?.querySelector('span:first-child');
 		const title = titleEl?.textContent?.trim() || 'cet article';
 		const ok = window.confirm(
-			`Vous allez supprimer définitivement l’article « ${title} ».\n\nCette action est irréversible. Cliquez sur OK pour confirmer la suppression.`,
+			`Supprimer l’article « ${title} » ? Cette action est définitive.`,
 		);
 		if (!ok) {
 			return;
 		}
-		await deleteArticle(id);
-		if (editingArticleId === id) {
-			resetArticleForm();
+		try {
+			await deleteArticle(id);
+			if (editingArticleId === id) {
+				resetArticleForm();
+			}
+			await refreshArticleList();
+			window.alert('Article supprimé.');
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			console.error('Suppression article:', msg);
+			window.alert('La suppression n’a pas abouti. Réessayez.');
 		}
-		await refreshArticleList();
 	}
 });
 
@@ -652,7 +662,7 @@ document.getElementById('btn-save-article')?.addEventListener('click', async () 
 			url = row.querySelector('.extra-url')?.value.trim() || '';
 		}
 		if (type === 'video' && mode !== 'url') {
-			window.alert('Pour les articles, les vidéos doivent être saisies par lien.');
+			window.alert('Pour une vidéo, utilisez un lien (pas de fichier sur cette ligne).');
 			return;
 		}
 		if (!url) {
@@ -686,17 +696,19 @@ document.getElementById('btn-save-article')?.addEventListener('click', async () 
 	};
 
 	const wasNew = !editingArticleId;
-	await saveArticle(payload);
-	await refreshArticleList();
-	// 1) But : toujours repartir d'un formulaire vide après enregistrement.
-	// 2) Variables clés : resetArticleForm remet editingArticleId à null + vide tous les champs.
-	// 3) Flux : comportement identique après création ET après modification.
-	resetArticleForm();
-	window.alert(
-		wasNew
-			? 'Article créé (mémoire session — rechargement = données seed ; Firebase pour la persistance).'
-			: 'Modifications enregistrées (mémoire session — rechargement = données seed ; Firebase pour la persistance).',
-	);
+	try {
+		await saveArticle(payload);
+		await refreshArticleList();
+		// 1) But : toujours repartir d'un formulaire vide après enregistrement.
+		// 2) Variables clés : resetArticleForm remet editingArticleId à null + vide tous les champs.
+		// 3) Flux : comportement identique après création ET après modification.
+		resetArticleForm();
+		window.alert(wasNew ? 'Article enregistré.' : 'Modifications enregistrées.');
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		console.error('Enregistrement article:', msg);
+		window.alert("L'enregistrement n'a pas abouti. Vérifiez les champs et réessayez.");
+	}
 });
 
 // ——— Galerie fixe : albums + tri ———
@@ -761,9 +773,12 @@ function syncGalleryVirtualAlbumUi() {
 	const delAlbum = document.getElementById('btn-del-album');
 	if (delAlbum) {
 		delAlbum.disabled = isVirtual;
-		delAlbum.title = isVirtual
-			? 'Album « Médias articles » : suppression impossible'
-			: '';
+		delAlbum.title = isVirtual ? 'Album non modifiable ici' : '';
+	}
+	const renameAlbum = document.getElementById('btn-rename-album');
+	if (renameAlbum) {
+		renameAlbum.disabled = isVirtual;
+		renameAlbum.title = isVirtual ? 'Album non modifiable ici' : '';
 	}
 	const hint = document.getElementById('admin-gallery-items-hint');
 	if (hint) {
@@ -1002,8 +1017,18 @@ async function renderGalleryItemsList() {
 	ul.addEventListener('click', async (e) => {
 		const b = e.target.closest('[data-del-gitem]');
 		if (b) {
-			await deleteGalleryItem(b.dataset.delGitem);
-			await renderGalleryItemsList();
+			if (!window.confirm('Supprimer ce média ?')) {
+				return;
+			}
+			try {
+				await deleteGalleryItem(b.dataset.delGitem);
+				await renderGalleryItemsList();
+				window.alert('Média supprimé.');
+			} catch (err) {
+				const msg = err instanceof Error ? err.message : String(err);
+				console.error('Suppression média galerie:', msg);
+				window.alert('La suppression n’a pas abouti. Réessayez.');
+			}
 		}
 	});
 }
@@ -1015,23 +1040,68 @@ document.getElementById('admin-gallery-album')?.addEventListener('change', async
 });
 
 document.getElementById('btn-new-album')?.addEventListener('click', async () => {
-	const title = window.prompt('Nom du nouvel album');
-	if (title) {
-		await saveGalleryAlbum({ title });
+	const title = window.prompt('Nom du nouvel album :');
+	if (!title || !title.trim()) {
+		return;
+	}
+	try {
+		await saveGalleryAlbum({ title: title.trim() });
 		await refreshGalleryAdmin();
+		window.alert('Album créé.');
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		console.error('Création album:', msg);
+		window.alert('La création de l’album n’a pas abouti. Réessayez.');
+	}
+});
+
+/**
+ * 1) But : renommer l’album Firestore sélectionné (hors album virtuel « Médias articles »).
+ * 2) Variables clés : `galleryAlbumId`, liste `listGalleryAlbums` pour le titre courant.
+ * 3) Flux : prompt -> `saveGalleryAlbum` avec id -> rafraîchissement + message de confirmation.
+ */
+document.getElementById('btn-rename-album')?.addEventListener('click', async () => {
+	if (galleryAlbumId === DYNAMIC_GALLERY_ALBUM_ID) {
+		window.alert('Cet album ne peut pas être renommé ici.');
+		return;
+	}
+	if (!galleryAlbumId) {
+		return;
+	}
+	try {
+		const albums = await listGalleryAlbums();
+		const current = albums.find((a) => a.id === galleryAlbumId);
+		const next = window.prompt('Nouveau nom de l’album :', current?.title || '');
+		if (!next || !String(next).trim()) {
+			return;
+		}
+		await saveGalleryAlbum({ id: galleryAlbumId, title: String(next).trim() });
+		await refreshGalleryAdmin();
+		window.alert('Nom de l’album mis à jour.');
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		console.error('Renommage album:', msg);
+		window.alert('Le renommage n’a pas abouti. Réessayez.');
 	}
 });
 
 document.getElementById('btn-del-album')?.addEventListener('click', async () => {
 	if (galleryAlbumId === DYNAMIC_GALLERY_ALBUM_ID) {
-		window.alert('« Médias articles » est un album virtuel : il ne peut pas être supprimé.');
+		window.alert('Cet album ne peut pas être supprimé.');
 		return;
 	}
-	if (!galleryAlbumId || !window.confirm('Supprimer cet album et son contenu ?')) {
+	if (!galleryAlbumId || !window.confirm('Supprimer cet album et tous les médias qu’il contient ?')) {
 		return;
 	}
-	await deleteGalleryAlbum(galleryAlbumId);
-	await refreshGalleryAdmin();
+	try {
+		await deleteGalleryAlbum(galleryAlbumId);
+		await refreshGalleryAdmin();
+		window.alert('Album supprimé.');
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		console.error('Suppression album:', msg);
+		window.alert('La suppression n’a pas abouti. Réessayez.');
+	}
 });
 
 /**
@@ -1083,13 +1153,11 @@ document.getElementById('gitem-type')?.addEventListener('change', syncGalleryIte
 document.getElementById('btn-add-gitem')?.addEventListener('click', async () => {
 	const targetAlbum = document.getElementById('gitem-target-album')?.value?.trim() || '';
 	if (!targetAlbum) {
-		window.alert('Créez d’abord un album pour y ajouter des médias.');
+		window.alert('Créez d’abord un album.');
 		return;
 	}
 	if (targetAlbum === DYNAMIC_GALLERY_ALBUM_ID) {
-		window.alert(
-			'« Médias articles » est rempli automatiquement depuis les articles. Choisissez un autre album.',
-		);
+		window.alert('Choisissez un autre album : celui-ci se remplit tout seul à partir des articles.');
 		return;
 	}
 
@@ -1097,7 +1165,7 @@ document.getElementById('btn-add-gitem')?.addEventListener('click', async () => 
 	const sourceMode = document.getElementById('gitem-source-mode')?.value || 'url';
 
 	if (type === 'video' && sourceMode === 'file') {
-		window.alert('Pour une vidéo, utilisez uniquement un lien (fichier non pris en charge ici).');
+		window.alert('Pour une vidéo, indiquez un lien (pas de fichier).');
 		return;
 	}
 
@@ -1114,26 +1182,33 @@ document.getElementById('btn-add-gitem')?.addEventListener('click', async () => 
 		url = normalizeVideoEmbedUrl(url) || url;
 	}
 	if (!url) {
-		window.alert('Indiquez une URL ou choisissez un fichier image.');
+		window.alert('Ajoutez une adresse web ou choisissez une image sur votre ordinateur.');
 		return;
 	}
 
 	const poster =
 		type === 'video' ? resolveVideoPosterUrl(url, '') || url : url;
 
-	await saveGalleryItem({
-		albumId: targetAlbum,
-		url,
-		type,
-		thumbUrl: poster,
-		caption: document.getElementById('gitem-cap')?.value.trim() || '',
-	});
-	document.getElementById('gitem-url').value = '';
-	const gitemFile = document.getElementById('gitem-file');
-	if (gitemFile) {
-		gitemFile.value = '';
+	try {
+		await saveGalleryItem({
+			albumId: targetAlbum,
+			url,
+			type,
+			thumbUrl: poster,
+			caption: document.getElementById('gitem-cap')?.value.trim() || '',
+		});
+		document.getElementById('gitem-url').value = '';
+		const gitemFile = document.getElementById('gitem-file');
+		if (gitemFile) {
+			gitemFile.value = '';
+		}
+		await renderGalleryItemsList();
+		window.alert('Média ajouté.');
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		console.error('Ajout média galerie:', msg);
+		window.alert("L'ajout du média n'a pas abouti. Vérifiez le lien ou le fichier et réessayez.");
 	}
-	await renderGalleryItemsList();
 });
 
 // ——— Boutique ———
@@ -1195,32 +1270,31 @@ function eurosToCents(str) {
 function validateProductPayload(payload) {
 	const errors = [];
 	if (!payload.title) {
-		errors.push('Le titre du produit est obligatoire.');
+		errors.push('Indiquez un titre pour le livre.');
 	}
 	if (!payload.imageUrl) {
-		errors.push('Ajoutez une image produit (lien ou fichier).');
+		errors.push('Ajoutez une couverture (lien ou fichier).');
 	}
 	if (!Number.isFinite(payload.priceCents) || payload.priceCents <= 0) {
-		errors.push('Le prix doit être supérieur à 0.');
+		errors.push('Indiquez un prix valide (supérieur à 0).');
 	}
 	if (payload.promo) {
 		const oldPrice = Number(payload.priceBeforePromoCents || 0);
 		if (oldPrice <= 0) {
-			errors.push('En mode promotion, renseignez un ancien prix valide.');
+			errors.push('En promotion : indiquez aussi l’ancien prix.');
 		}
 		if (oldPrice > 0 && oldPrice <= payload.priceCents) {
-			errors.push('L’ancien prix doit être supérieur au prix actuel.');
+			errors.push('L’ancien prix doit être plus élevé que le prix actuel.');
 		}
 	}
 	if (payload.sumupUrl && payload.sumupUrl !== '#') {
 		try {
-			// Validation URL standard (http/https).
 			const parsed = new URL(payload.sumupUrl);
 			if (!/^https?:$/i.test(parsed.protocol)) {
 				errors.push('Le lien d’achat doit commencer par http:// ou https://');
 			}
 		} catch {
-			errors.push('Le lien d’achat n’est pas une URL valide.');
+			errors.push('Le lien d’achat ne semble pas correct.');
 		}
 	}
 	return errors;
@@ -1270,13 +1344,14 @@ document.getElementById('admin-product-list')?.addEventListener('click', async (
 		updateProductSaveButtonLabel();
 		return;
 	}
-	if (del && window.confirm('Supprimer ce produit ?')) {
+	if (del && window.confirm('Retirer ce livre de la boutique ?')) {
 		await deleteProduct(del.dataset.delProduct);
 		refreshProductList();
 		if (editingProductId === del.dataset.delProduct) {
 			editingProductId = null;
 			updateProductSaveButtonLabel();
 		}
+		window.alert('Livre retiré de la boutique.');
 	}
 });
 
@@ -1335,10 +1410,11 @@ document.getElementById('btn-save-product')?.addEventListener('click', async () 
 			editingProductId = null;
 		}
 		updateProductSaveButtonLabel();
-		window.alert(isNew ? 'Produit créé.' : 'Produit mis à jour.');
+		window.alert(isNew ? 'Livre ajouté à la boutique.' : 'Fiche livre mise à jour.');
 	} catch (err) {
-		const msg = err instanceof Error ? err.message : 'Enregistrement produit impossible.';
-		window.alert(`Erreur produit : ${msg}`);
+		const msg = err instanceof Error ? err.message : String(err);
+		console.error('Enregistrement produit:', msg);
+		window.alert("L'enregistrement n'a pas abouti. Vérifiez les champs et réessayez.");
 	}
 });
 
@@ -1375,11 +1451,14 @@ async function triggerSiteRebuild() {
 		}
 		renderLastPublishStatus(payload?.publishedAt || null);
 		window.alert(
-			'Publication déclenchée. Vercel va lancer un nouveau build avec le contenu Firestore.'
+			'Publication en cours. Veuillez patienter environ 1 à 3 minutes avant que les changements apparaissent sur le site.',
 		);
 	} catch (err) {
-		const msg = err instanceof Error ? err.message : 'Erreur publication.';
-		window.alert(`Publication impossible : ${msg}`);
+		const msg = err instanceof Error ? err.message : String(err);
+		console.error('Publication site:', msg);
+		window.alert(
+			"La publication n'a pas pu démarrer. Réessayez dans un instant. Si le problème continue, vérifiez votre connexion ou contactez la personne qui gère l'hébergement.",
+		);
 	} finally {
 		if (button) {
 			button.disabled = false;
