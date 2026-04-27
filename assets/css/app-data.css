@@ -646,24 +646,6 @@ html {
   overflow: hidden !important;
 }
 
-.dv-contact-status {
-  /* 1) But : afficher un feedback compact sous le bouton sans casser la grille du formulaire. */
-  /* 2) Variables clés : marge courte + taille de texte lisible + hauteur minimale stable. */
-  /* 3) Flux : même espace réservé pendant chargement, succès et erreur. */
-  margin: 0.45rem 0 0;
-  min-height: 1.35rem;
-  font-size: 0.9rem;
-  line-height: 1.35;
-}
-
-.dv-contact-status.is-success {
-  color: #2d7a54;
-}
-
-.dv-contact-status.is-error {
-  color: #c64d4d;
-}
-
 @media screen and (max-width: 980px) {
   .dv-index-contact__grid {
     grid-template-columns: 1fr;

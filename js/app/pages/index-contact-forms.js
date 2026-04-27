@@ -6,6 +6,7 @@
 
 const CONTACT_ENDPOINT = '/api/contact'
 const MIN_SUBMIT_DELAY_MS = 1500
+const BUTTON_STATUS_RESET_MS = 2600
 
 /**
  * Génère un identifiant de requête lisible pour tracer les soumissions.
@@ -116,27 +117,6 @@ function buildPayload(formEl) {
 }
 
 /**
- * Met à jour le message de statut sous un formulaire.
- *
- * @param {HTMLFormElement} formEl
- * @param {string} text
- * @param {'success' | 'error' | 'neutral'} type
- */
-function setStatus(formEl, text, type) {
-  const statusEl = formEl.querySelector('.dv-contact-status')
-  if (!(statusEl instanceof HTMLElement)) {
-    return
-  }
-  statusEl.textContent = text
-  statusEl.classList.remove('is-success', 'is-error')
-  if (type === 'success') {
-    statusEl.classList.add('is-success')
-  } else if (type === 'error') {
-    statusEl.classList.add('is-error')
-  }
-}
-
-/**
  * Applique l'état "envoi en cours" au bouton de soumission.
  *
  * @param {HTMLFormElement} formEl
@@ -150,6 +130,47 @@ function setPendingState(formEl, pending) {
   const defaultLabel = submitButton.dataset.defaultLabel || submitButton.value || 'Envoyer'
   submitButton.disabled = pending
   submitButton.value = pending ? 'Envoi en cours...' : defaultLabel
+}
+
+/**
+ * Affiche un statut directement dans le bouton de soumission.
+ *
+ * 1) But : centraliser tous les retours utilisateur (envoi, erreur, succès) dans le bouton.
+ * 2) Variables clés :
+ *    - submitButton : bouton cible du formulaire.
+ *    - resetDelayMs : délai avant retour au libellé par défaut.
+ *    - timerKey : stockage du timer pour éviter les collisions d'affichage.
+ * 3) Flux : applique le texte de statut -> optionnellement planifie un reset automatique.
+ *
+ * @param {HTMLFormElement} formEl
+ * @param {string} text
+ * @param {{ disabled?: boolean, resetDelayMs?: number }} options
+ */
+function setButtonStatus(formEl, text, options) {
+  const submitButton = formEl.querySelector('input[type="submit"]')
+  if (!(submitButton instanceof HTMLInputElement)) {
+    return
+  }
+  const defaultLabel = submitButton.dataset.defaultLabel || submitButton.value || 'Envoyer'
+  const disabled = Boolean(options && options.disabled)
+  const resetDelayMs = Number((options && options.resetDelayMs) || 0)
+  const timerKey = '__dvContactButtonTimer'
+
+  const existingTimer = formEl[timerKey]
+  if (typeof existingTimer === 'number') {
+    window.clearTimeout(existingTimer)
+    formEl[timerKey] = null
+  }
+
+  submitButton.value = text
+  submitButton.disabled = disabled
+  if (resetDelayMs > 0) {
+    formEl[timerKey] = window.setTimeout(() => {
+      submitButton.value = defaultLabel
+      submitButton.disabled = false
+      formEl[timerKey] = null
+    }, resetDelayMs)
+  }
 }
 
 /**
@@ -171,11 +192,10 @@ function setPendingState(formEl, pending) {
 function wireContactForm(formEl) {
   formEl.addEventListener('submit', async (event) => {
     event.preventDefault()
-    setStatus(formEl, '', 'neutral')
 
     const payloadResult = buildPayload(formEl)
     if (!payloadResult.ok) {
-      setStatus(formEl, payloadResult.message, 'error')
+      setButtonStatus(formEl, payloadResult.message, { resetDelayMs: BUTTON_STATUS_RESET_MS })
       return
     }
 
@@ -197,11 +217,10 @@ function wireContactForm(formEl) {
       if (loadedAtInput instanceof HTMLInputElement) {
         loadedAtInput.value = String(Date.now())
       }
-      setStatus(formEl, 'Votre message a bien été envoyé.', 'success')
+      setButtonStatus(formEl, 'Message envoyé', { resetDelayMs: BUTTON_STATUS_RESET_MS })
     } catch (error) {
-      setStatus(formEl, error instanceof Error ? error.message : 'Erreur réseau. Réessayez dans un instant.', 'error')
-    } finally {
-      setPendingState(formEl, false)
+      const errorLabel = error instanceof Error && error.message ? error.message : 'Erreur d’envoi'
+      setButtonStatus(formEl, errorLabel, { resetDelayMs: BUTTON_STATUS_RESET_MS })
     }
   })
 }
