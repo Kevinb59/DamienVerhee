@@ -1,7 +1,19 @@
 const crypto = require('crypto');
 
 function asText(value) {
-	return String(value || '').trim();
+	const raw = String(value || '').trim();
+	/**
+	 * 1) Purpose:
+	 *    - Tolérer les variables d'environnement collées avec des guillemets.
+	 * 2) Key variables:
+	 *    - raw: valeur brute après trim.
+	 * 3) Logic flow:
+	 *    - si la valeur est entourée par "..." ou '...', on retire l'enveloppe.
+	 */
+	const quoted =
+		(raw.startsWith('"') && raw.endsWith('"')) ||
+		(raw.startsWith("'") && raw.endsWith("'"));
+	return quoted ? raw.slice(1, -1).trim() : raw;
 }
 
 function sanitizePathPart(value) {
