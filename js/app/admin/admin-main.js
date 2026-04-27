@@ -676,11 +676,10 @@ document.getElementById('btn-save-article')?.addEventListener('click', async () 
 	const wasNew = !editingArticleId;
 	await saveArticle(payload);
 	await refreshArticleList();
-	if (wasNew) {
-		resetArticleForm();
-	} else {
-		updateArticleSaveButtonLabel();
-	}
+	// 1) But : toujours repartir d'un formulaire vide après enregistrement.
+	// 2) Variables clés : resetArticleForm remet editingArticleId à null + vide tous les champs.
+	// 3) Flux : comportement identique après création ET après modification.
+	resetArticleForm();
 	window.alert(
 		wasNew
 			? 'Article créé (mémoire session — rechargement = données seed ; Firebase pour la persistance).'
