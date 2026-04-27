@@ -129,7 +129,6 @@ module.exports = async function handler(req, res) {
 	const signedParams = {
 		folder,
 		public_id: publicId,
-		resource_type: resourceType,
 		timestamp,
 	};
 	const { signature, stringToSign } = signCloudinaryParams(signedParams, apiSecret);
@@ -142,7 +141,6 @@ module.exports = async function handler(req, res) {
 		signature,
 		folder,
 		publicId,
-		resourceType,
 		stringToSign,
 		uploadUrl: `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
 	});
