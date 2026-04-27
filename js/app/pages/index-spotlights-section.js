@@ -2,6 +2,7 @@
  * Bloc d’accueil « spotlights » : calendrier des événements (articles `isEvent`) et panneau de détail.
  */
 import { listEventArticles } from '../store.js'
+import { CLOUDINARY_PRESETS, optimizeCloudinaryImage } from '../cloudinary.js'
 
 /** Texte affiché lorsqu’aucun jour à événement n’est sélectionné (ou jour sans événement). */
 const HINT_EMPTY =
@@ -119,8 +120,12 @@ function renderEventDetail(article) {
   const medias = Array.isArray(article.media) ? article.media : []
   const firstMedia = medias[0] || null
   const thumbSrc = firstMedia ? firstMedia.thumbUrl || firstMedia.url || '' : ''
+  const optimizedThumbSrc = optimizeCloudinaryImage(
+    thumbSrc,
+    CLOUDINARY_PRESETS.articleThumb
+  )
   const thumbHtml = thumbSrc
-    ? `<span class="dv-event-detail__thumb-wrap"><img class="dv-event-detail__thumb" src="${esc(thumbSrc)}" alt="" /></span>`
+    ? `<span class="dv-event-detail__thumb-wrap"><img class="dv-event-detail__thumb" src="${esc(optimizedThumbSrc)}" alt="" loading="lazy" decoding="async" /></span>`
     : `<span class="dv-event-detail__thumb-wrap dv-event-detail__thumb-wrap--empty" aria-hidden="true"></span>`
 
   root.innerHTML = `

@@ -3,6 +3,7 @@
  * Affiche miniature ronde du premier média, titre et summaryLine (hors page article).
  */
 import { listLatestArticles } from '../store.js'
+import { CLOUDINARY_PRESETS, optimizeCloudinaryImage } from '../cloudinary.js'
 
 const PLACEHOLDER_IMG = 'images/pic01.jpg'
 
@@ -86,7 +87,10 @@ async function render() {
 
     const frag = document.createDocumentFragment()
     for (const a of articles) {
-      const thumb = firstMediaThumbUrl(a)
+      const thumb = optimizeCloudinaryImage(
+        firstMediaThumbUrl(a),
+        CLOUDINARY_PRESETS.articleThumb
+      )
       const line = a.summaryLine || a.excerpt || ''
       const slug = encodeURIComponent(a.slug)
       const section = document.createElement('section')

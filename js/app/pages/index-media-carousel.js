@@ -3,6 +3,7 @@
  * Source dynamique : bandeau titre + résumé + bouton article. Source fixe : média seul.
  */
 import { listLatestCombinedGalleryMedia } from '../store.js'
+import { CLOUDINARY_PRESETS, optimizeCloudinaryImage } from '../cloudinary.js'
 
 /** Durée alignée sur la transition CSS du track et du viewport (hauteur). */
 const TRACK_TRANSITION_MS = 400
@@ -25,8 +26,13 @@ function esc(s) {
  */
 function slideHtml(slide, isFixed) {
   const isVideo = slide.type === 'video'
-  const mediaUrl = slide.url
-  const poster = slide.thumbUrl || slide.url
+  const mediaUrl = isVideo
+    ? optimizeCloudinaryImage(slide.url, CLOUDINARY_PRESETS.galleryPoster)
+    : optimizeCloudinaryImage(slide.url, CLOUDINARY_PRESETS.articleHero)
+  const poster = optimizeCloudinaryImage(
+    slide.thumbUrl || slide.url,
+    CLOUDINARY_PRESETS.galleryThumb
+  )
   // Médias non visibles : pas de préchargement vidéo lourd ; le poster est préchargé côté JS (voisins).
   const videoPreload = 'none'
   const mediaBlock = isVideo

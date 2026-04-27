@@ -2615,3 +2615,61 @@ html {
 .dv-article-body a {
   word-break: break-word;
 }
+
+.dv-admin-auth {
+  /* 1) But : bloquer visuellement l'acces admin tant que l'utilisateur n'est pas authentifie. */
+  /* 2) Variables cles : overlay plein ecran + centrage carte de connexion. */
+  /* 3) Flux : seul le formulaire de login est visible avant validation Firebase. */
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(34, 41, 51, 0.88);
+}
+
+.dv-admin-auth[hidden] {
+  /* 1) But : garantir la fermeture reelle de la modale apres authentification. */
+  /* 2) Variables cles : hidden force display none malgre la regle .dv-admin-auth. */
+  /* 3) Flux : le panneau admin devient visible, sans overlay persistant. */
+  display: none !important;
+}
+
+.dv-admin-auth__card {
+  width: min(100%, 28rem);
+  border-radius: 0.6rem;
+  background: #ffffff;
+  color: #3f4b5d;
+  padding: 1.6rem;
+  box-shadow: 0 1.2rem 2.2rem rgba(0, 0, 0, 0.25);
+}
+
+.dv-admin-auth__card h1 {
+  /* 1) But : eviter le debordement du titre sur petits ecrans. */
+  /* 2) Variables cles : suppression de l'exces de tracking + taille fluide. */
+  /* 3) Flux : le mot "Administration" reste contenu dans la carte. */
+  margin: 0 0 0.45rem;
+  letter-spacing: 0.1em;
+  font-size: clamp(1.6rem, 4.4vw, 2.2rem);
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.dv-admin-auth__text {
+  margin: 0 0 1rem;
+}
+
+.dv-admin-auth__form .dv-admin__field {
+  margin-bottom: 0.9rem;
+}
+
+.dv-admin-auth__message {
+  min-height: 1.3rem;
+  color: #aa3c2f;
+  margin: 0.2rem 0 0.9rem;
+}
+
+.dv-admin-auth__submit {
+  width: 100%;
+}

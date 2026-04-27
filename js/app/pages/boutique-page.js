@@ -3,6 +3,7 @@
  * Résumé tronqué à 3 lignes avec bouton pour tout afficher ou réduire.
  */
 import { listProducts, formatPrice } from '../store.js'
+import { CLOUDINARY_PRESETS, optimizeCloudinaryImage } from '../cloudinary.js'
 
 function esc(s) {
   const d = document.createElement('div')
@@ -90,8 +91,9 @@ async function render() {
 
       // Bloc résumé : paragraphe avec line-clamp + bouton icône (thème Font Awesome du site)
       const synopsisText = esc(p.synopsis || '')
+      const optimizedImageUrl = optimizeCloudinaryImage(p.imageUrl, CLOUDINARY_PRESETS.productCover)
       card.innerHTML = `
-				${p.imageUrl ? `<img class="dv-product-card__img" src="${esc(p.imageUrl)}" alt="" />` : ''}
+				${optimizedImageUrl ? `<img class="dv-product-card__img" src="${esc(optimizedImageUrl)}" alt="" loading="lazy" decoding="async" />` : ''}
 				<div class="dv-product-card__body">
 					<h3 class="dv-product-card__title">${esc(p.title)}</h3>
 					<div class="dv-product-card__synopsis-block">

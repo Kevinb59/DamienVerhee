@@ -23,8 +23,11 @@ import {
 import { extractMediaFromHtml, mergeArticleMedia } from '../mediaextract.js';
 import { setupQuillMediaResize } from './quill-media-resize.js';
 import { normalizeVideoEmbedUrl } from './video-embed-url.js';
+import { enforceAdminAccess } from './admin-auth.js';
 
 /* global Quill, Sortable */
+
+await enforceAdminAccess();
 
 // ——— Quill : tailles de police et iframe vidéo (YouTube / Vimeo / URL embed) ———
 const BlockEmbed = Quill.import('blots/block/embed');
@@ -953,6 +956,22 @@ document.getElementById('btn-add-gitem')?.addEventListener('click', async () => 
 // ——— Boutique ———
 let editingProductId = null;
 
+/**
+ * Met à jour le libellé du bouton produit selon le contexte.
+ *
+ * 1) But : distinguer clairement création vs mise à jour.
+ * 2) Variables clés :
+ *    - editingProductId : null = création, string = édition.
+ * 3) Flux : texte du bouton synchronisé après chaque changement d’état.
+ */
+function updateProductSaveButtonLabel() {
+	const btn = document.getElementById('btn-save-product');
+	if (!btn) {
+		return;
+	}
+	btn.textContent = editingProductId ? 'Enregistrer les modifications' : 'Créer le produit';
+}
+
 async function refreshProductList() {
 	const ul = document.getElementById('admin-product-list');
 	if (!ul) {
@@ -976,6 +995,52 @@ function eurosToCents(str) {
 		return 0;
 	}
 	return Math.round(n * 100);
+}
+
+/**
+ * Vérifie l’intégrité minimale d’un produit avant sauvegarde.
+ *
+ * 1) But : éviter l’enregistrement de fiches incomplètes.
+ * 2) Variables clés :
+ *    - payload : données prêtes à persister.
+ *    - promo : active la validation de l’ancien prix.
+ * 3) Flux : accumulation des erreurs -> retour de la liste au submitter.
+ *
+ * @param {{ title: string, imageUrl: string, priceCents: number, promo: boolean, priceBeforePromoCents: number|null, sumupUrl: string }} payload
+ * @returns {string[]}
+ */
+function validateProductPayload(payload) {
+	const errors = [];
+	if (!payload.title) {
+		errors.push('Le titre du produit est obligatoire.');
+	}
+	if (!payload.imageUrl) {
+		errors.push('Ajoutez une image produit (lien ou fichier).');
+	}
+	if (!Number.isFinite(payload.priceCents) || payload.priceCents <= 0) {
+		errors.push('Le prix doit être supérieur à 0.');
+	}
+	if (payload.promo) {
+		const oldPrice = Number(payload.priceBeforePromoCents || 0);
+		if (oldPrice <= 0) {
+			errors.push('En mode promotion, renseignez un ancien prix valide.');
+		}
+		if (oldPrice > 0 && oldPrice <= payload.priceCents) {
+			errors.push('L’ancien prix doit être supérieur au prix actuel.');
+		}
+	}
+	if (payload.sumupUrl && payload.sumupUrl !== '#') {
+		try {
+			// Validation URL standard (http/https).
+			const parsed = new URL(payload.sumupUrl);
+			if (!/^https?:$/i.test(parsed.protocol)) {
+				errors.push('Le lien d’achat doit commencer par http:// ou https://');
+			}
+		} catch {
+			errors.push('Le lien d’achat n’est pas une URL valide.');
+		}
+	}
+	return errors;
 }
 
 /**
@@ -1019,11 +1084,16 @@ document.getElementById('admin-product-list')?.addEventListener('click', async (
 		document.getElementById('prod-sumup').value = p.sumupUrl;
 		document.getElementById('prod-published').checked = !!p.published;
 		syncProductImageSourceMode();
+		updateProductSaveButtonLabel();
 		return;
 	}
 	if (del && window.confirm('Supprimer ce produit ?')) {
 		await deleteProduct(del.dataset.delProduct);
 		refreshProductList();
+		if (editingProductId === del.dataset.delProduct) {
+			editingProductId = null;
+			updateProductSaveButtonLabel();
+		}
 	}
 });
 
@@ -1043,34 +1113,50 @@ document.getElementById('btn-new-product')?.addEventListener('click', () => {
 	document.getElementById('prod-sumup').value = '';
 	document.getElementById('prod-published').checked = true;
 	syncProductImageSourceMode();
+	updateProductSaveButtonLabel();
 });
 
 document.getElementById('btn-save-product')?.addEventListener('click', async () => {
-	const promo = document.getElementById('prod-promo').checked;
-	const imageMode = document.getElementById('prod-image-mode')?.value || 'url';
-	let imageUrl = '';
-	if (imageMode === 'file') {
-		const file = document.getElementById('prod-image-file')?.files?.[0] || null;
-		const uploaded = await uploadFileWithFeedback(file, 'products/covers');
-		imageUrl = uploaded?.url || document.getElementById('prod-image').value.trim();
-	} else {
-		imageUrl = document.getElementById('prod-image').value.trim();
+	try {
+		const promo = document.getElementById('prod-promo').checked;
+		const imageMode = document.getElementById('prod-image-mode')?.value || 'url';
+		let imageUrl = '';
+		if (imageMode === 'file') {
+			const file = document.getElementById('prod-image-file')?.files?.[0] || null;
+			const uploaded = await uploadFileWithFeedback(file, 'products/covers');
+			imageUrl = uploaded?.url || document.getElementById('prod-image').value.trim();
+		} else {
+			imageUrl = document.getElementById('prod-image').value.trim();
+		}
+		const payload = {
+			id: editingProductId || undefined,
+			title: document.getElementById('prod-title').value.trim(),
+			imageUrl,
+			synopsis: document.getElementById('prod-synopsis').value.trim(),
+			priceCents: eurosToCents(document.getElementById('prod-price').value),
+			promo,
+			priceBeforePromoCents: promo ? eurosToCents(document.getElementById('prod-oldprice').value) : null,
+			sumupUrl: document.getElementById('prod-sumup').value.trim() || '#',
+			published: document.getElementById('prod-published').checked,
+			currency: 'EUR',
+		};
+		const errors = validateProductPayload(payload);
+		if (errors.length) {
+			window.alert(errors.join('\n'));
+			return;
+		}
+		const isNew = !editingProductId;
+		await saveProduct(payload);
+		await refreshProductList();
+		if (isNew) {
+			editingProductId = null;
+		}
+		updateProductSaveButtonLabel();
+		window.alert(isNew ? 'Produit créé.' : 'Produit mis à jour.');
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : 'Enregistrement produit impossible.';
+		window.alert(`Erreur produit : ${msg}`);
 	}
-	const payload = {
-		id: editingProductId || undefined,
-		title: document.getElementById('prod-title').value.trim(),
-		imageUrl,
-		synopsis: document.getElementById('prod-synopsis').value.trim(),
-		priceCents: eurosToCents(document.getElementById('prod-price').value),
-		promo,
-		priceBeforePromoCents: promo ? eurosToCents(document.getElementById('prod-oldprice').value) : null,
-		sumupUrl: document.getElementById('prod-sumup').value.trim() || '#',
-		published: document.getElementById('prod-published').checked,
-		currency: 'EUR',
-	};
-	await saveProduct(payload);
-	await refreshProductList();
-	window.alert('Produit enregistré.');
 });
 
 // Chargement initial : onglet articles
@@ -1078,4 +1164,5 @@ updateArticleSaveButtonLabel();
 syncEventFieldsVisibility();
 syncGallerySourceMode();
 syncProductImageSourceMode();
+updateProductSaveButtonLabel();
 refreshArticleList();

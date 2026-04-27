@@ -3,6 +3,7 @@
  */
 import { listDynamicGalleryItems, listGalleryAlbums, listGalleryItems } from '../store.js'
 import { initMediaModal } from '../ui/mediaModal.js'
+import { CLOUDINARY_PRESETS, optimizeCloudinaryImage } from '../cloudinary.js'
 
 function esc(s) {
   const d = document.createElement('div')
@@ -23,12 +24,19 @@ function renderThumbs(items) {
   return items
     .map((m) => {
       const type = m.type === 'video' ? 'video' : 'image'
-      const thumb = m.thumbUrl || m.url
-      const u = JSON.stringify(m.url)
-      const t = JSON.stringify(thumb)
+      const optimizedMediaUrl =
+        type === 'video'
+          ? optimizeCloudinaryImage(m.url, CLOUDINARY_PRESETS.galleryPoster)
+          : optimizeCloudinaryImage(m.url, CLOUDINARY_PRESETS.articleHero)
+      const optimizedThumb = optimizeCloudinaryImage(
+        m.thumbUrl || m.url,
+        CLOUDINARY_PRESETS.galleryThumb
+      )
+      const u = JSON.stringify(optimizedMediaUrl)
+      const t = JSON.stringify(optimizedThumb)
       return `
 			<button type="button" class="dv-media-thumb" data-media-modal data-media-type="${type}" data-media-url=${u}>
-				${type === 'video' ? `<video src=${u} muted playsinline></video><span class="dv-media-thumb__play">▶</span>` : `<img src=${t} alt="" />`}
+				${type === 'video' ? `<video src=${u} muted playsinline preload="metadata"></video><span class="dv-media-thumb__play">▶</span>` : `<img src=${t} alt="" loading="lazy" decoding="async" />`}
 			</button>`
     })
     .join('')
