@@ -2,7 +2,7 @@
 <!--
 	Damien VERHEE — Administration (ne pas indexer en production : ajouter auth Firebase + règles Firestore).
 	Bascule Firebase : avant les scripts, définir par exemple :
-	<script>window.__APP_DATA_PROVIDER__ = 'firebase'; window.__FIREBASE_CONFIG__ = { apiKey:'…', authDomain:'…', projectId:'…', storageBucket:'…', messagingSenderId:'…', appId:'…' }; window.__ADMIN_UIDS__ = ['uid_admin_1'];</script>
+	<script>window.__APP_DATA_PROVIDER__ = 'firebase'; window.__FIREBASE_CONFIG__ = { apiKey:'…', authDomain:'…', projectId:'…', storageBucket:'…', messagingSenderId:'…', appId:'…' }; window.__ADMIN_UIDS__ = ['uid_admin_1']; /* optionnel hors Vercel : window.__API_BASE__ = 'https://votre-domaine.fr'; */</script>
 -->
 <html>
   <head>
@@ -13,6 +13,11 @@
       content="width=device-width, initial-scale=1, user-scalable=no"
     />
     <meta name="robots" content="noindex,nofollow" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%23575b72' width='32' height='32' rx='6'/%3E%3Ctext x='16' y='22' text-anchor='middle' fill='%23fff' font-size='14' font-family='system-ui,sans-serif' font-weight='700'%3ED%3C/text%3E%3C/svg%3E"
+      type="image/svg+xml"
+    />
     <link rel="stylesheet" href="assets/css/main.css" />
     <link rel="stylesheet" href="assets/css/app-data.css" />
     <link

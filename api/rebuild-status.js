@@ -1,4 +1,5 @@
 const { getFirestoreAdmin } = require('./_firebase-admin')
+const { preflight } = require('./_cors')
 
 function asText(value) {
   return String(value || '').trim()
@@ -38,6 +39,9 @@ function isAllowedAdmin(uid) {
 }
 
 module.exports = async function handler(req, res) {
+  if (preflight(req, res)) {
+    return
+  }
   // 1) But : renvoyer la dernière publication partagée (serveur) pour l'admin.
   // 2) Variables clés : token admin + doc meta/sitePublication.
   // 3) Flux : auth -> lecture Firestore -> réponse JSON uniformisée.

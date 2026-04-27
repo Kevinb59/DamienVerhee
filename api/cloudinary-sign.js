@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { preflight } = require('./_cors');
 
 function asText(value) {
 	const raw = String(value || '').trim();
@@ -103,6 +104,9 @@ function isAllowedAdmin(uid) {
  * Point d'entrée Vercel serverless pour générer une signature Cloudinary.
  */
 module.exports = async function handler(req, res) {
+	if (preflight(req, res)) {
+		return;
+	}
 	if (req.method !== 'POST') {
 		return res.status(405).json({ ok: false, message: 'Methode non autorisee.' });
 	}

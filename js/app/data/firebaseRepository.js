@@ -1,4 +1,5 @@
 import { getFirebaseClientConfig, DYNAMIC_GALLERY_ALBUM_ID } from '../config.js';
+import { getApiUrl } from '../apiBase.js';
 
 let firebaseCoreCtx = null;
 
@@ -99,7 +100,7 @@ async function getCurrentAdminIdToken() {
  */
 async function requestCloudinarySignature(payload) {
 	const idToken = await getCurrentAdminIdToken();
-	const response = await fetch('/api/cloudinary-sign', {
+	const response = await fetch(getApiUrl('/api/cloudinary-sign'), {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',

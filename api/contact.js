@@ -2,6 +2,8 @@
  * API Vercel : proxy sécurisé vers les Google Apps Script des formulaires contact.
  */
 
+const { preflight } = require('./_cors')
+
 const AUTHOR_EMAIL = 'dverhee74@gmail.com'
 const PUBLISHER_EMAIL = 'contact@nombre7.fr'
 const ALLOWED_TARGETS = new Set(['author', 'publisher'])
@@ -84,6 +86,9 @@ function validateAndNormalize(body) {
  *    - renvoie une réponse uniforme au front.
  */
 module.exports = async function handler(req, res) {
+  if (preflight(req, res)) {
+    return
+  }
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, message: 'Méthode non autorisée.' })
   }

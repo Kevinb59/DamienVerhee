@@ -1,10 +1,11 @@
+import { getApiUrl } from '../apiBase.js'
+
 /**
  * Gestion des formulaires de contact de la page d'accueil :
  * - formulaire auteur -> GAS propriétaire
  * - formulaire maison d'édition -> GAS NomBre7
  */
 
-const CONTACT_ENDPOINT = '/api/contact'
 const MIN_SUBMIT_DELAY_MS = 1500
 const BUTTON_STATUS_RESET_MS = 2600
 
@@ -201,7 +202,7 @@ function wireContactForm(formEl) {
 
     setPendingState(formEl, true)
     try {
-      const response = await fetch(CONTACT_ENDPOINT, {
+      const response = await fetch(getApiUrl('/api/contact'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payloadResult.payload)

@@ -1,4 +1,5 @@
 const { getFirestoreAdmin } = require('./_firebase-admin')
+const { preflight } = require('./_cors')
 
 function asText(value) {
   return String(value || '').trim()
@@ -38,6 +39,9 @@ function isAllowedAdmin(uid) {
 }
 
 module.exports = async function handler(req, res) {
+  if (preflight(req, res)) {
+    return
+  }
   // 1) But : route protégée déclenchant le deploy hook Vercel.
   // 2) Variables clés : Authorization Bearer + VERCEL_DEPLOY_HOOK_URL.
   // 3) Flux : auth Firebase -> check UID admin -> POST hook Vercel.

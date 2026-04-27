@@ -27,6 +27,7 @@ import { extractMediaFromHtml, mergeArticleMedia } from '../mediaextract.js';
 import { setupQuillMediaResize } from './quill-media-resize.js';
 import { normalizeVideoEmbedUrl } from './video-embed-url.js';
 import { enforceAdminAccess, getCurrentAdminIdToken } from './admin-auth.js';
+import { getApiUrl } from '../apiBase.js';
 
 /* global Quill, Sortable */
 
@@ -1362,7 +1363,7 @@ async function triggerSiteRebuild() {
 			button.textContent = 'Publication en cours...';
 		}
 		const idToken = await getCurrentAdminIdToken();
-		const response = await fetch('/api/rebuild', {
+		const response = await fetch(getApiUrl('/api/rebuild'), {
 			method: 'POST',
 			headers: {
 				Authorization: `Bearer ${idToken}`,
@@ -1409,7 +1410,7 @@ async function renderLastPublishStatus(publishedAtIso = null) {
 	if (!rawIso) {
 		try {
 			const idToken = await getCurrentAdminIdToken();
-			const response = await fetch('/api/rebuild-status', {
+			const response = await fetch(getApiUrl('/api/rebuild-status'), {
 				method: 'GET',
 				headers: {
 					Authorization: `Bearer ${idToken}`,
