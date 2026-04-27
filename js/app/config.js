@@ -3,23 +3,29 @@
  * Objectif : basculer de la fausse BDD (mémoire + modules seed) vers Firebase sans retoucher les pages.
  *
  * Variables clés :
- * - window.__APP_DATA_PROVIDER__ : 'mock' | 'firebase' (défaut : mock)
+ * - window.__APP_DATA_PROVIDER__ : 'static' | 'mock' | 'firebase' (défaut : static)
  * - window.__FIREBASE_CONFIG__ : objet config Firebase (apiKey, projectId, …) quand le provider est firebase
  */
 
 /**
  * Lit le provider de données actif.
- * @returns {'mock'|'firebase'}
+ * @returns {'static'|'mock'|'firebase'}
  */
 export function getDataProvider() {
   // Priorité : variable globale injectée avant les modules (ex. snippet dans index.html ou Vercel)
+  if (
+    typeof window !== 'undefined' &&
+    window.__APP_DATA_PROVIDER__ === 'static'
+  ) {
+    return 'static'
+  }
   if (
     typeof window !== 'undefined' &&
     window.__APP_DATA_PROVIDER__ === 'firebase'
   ) {
     return 'firebase'
   }
-  return 'mock'
+  return 'static'
 }
 
 /**

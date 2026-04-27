@@ -1158,6 +1158,70 @@ document.getElementById('btn-save-product')?.addEventListener('click', async () 
 	}
 });
 
+/**
+ * Déclenche un rebuild Vercel sécurisé depuis l'admin.
+ *
+ * 1) But : publier le snapshot statique public sans exposer les secrets côté client.
+ * 2) Variables clés :
+ *    - idToken : jeton Firebase admin transmis en Bearer.
+ *    - button : verrouillage UI pendant l'appel API.
+ * 3) Flux :
+ *    - récupération du token Firebase courant
+ *    - POST vers /api/rebuild
+ *    - feedback utilisateur explicite (succès/erreur)
+ */
+async function triggerSiteRebuild() {
+	const button = document.getElementById('btn-publish-site');
+	const defaultLabel = button?.textContent || 'Publier le site';
+	try {
+		if (button) {
+			button.disabled = true;
+			button.textContent = 'Publication en cours...';
+		}
+		const { getApp, getApps, initializeApp } = await import(
+			'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'
+		);
+		const { getAuth } = await import(
+			'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js'
+		);
+		const app =
+			getApps().length > 0
+				? getApp()
+				: initializeApp(window.__FIREBASE_CONFIG__ || {});
+		const auth = getAuth(app);
+		const user = auth.currentUser;
+		if (!user) {
+			throw new Error('Session admin expirée. Reconnectez-vous.');
+		}
+		const idToken = await user.getIdToken();
+		const response = await fetch('/api/rebuild', {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${idToken}`,
+			},
+		});
+		const payload = await response.json().catch(() => ({}));
+		if (!response.ok || !payload?.ok) {
+			throw new Error(payload?.message || 'Rebuild impossible.');
+		}
+		window.alert(
+			'Publication déclenchée. Vercel va lancer un nouveau build avec le contenu Firestore.'
+		);
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : 'Erreur publication.';
+		window.alert(`Publication impossible : ${msg}`);
+	} finally {
+		if (button) {
+			button.disabled = false;
+			button.textContent = defaultLabel;
+		}
+	}
+}
+
+document.getElementById('btn-publish-site')?.addEventListener('click', () => {
+	triggerSiteRebuild();
+});
+
 // Chargement initial : onglet articles
 updateArticleSaveButtonLabel();
 syncEventFieldsVisibility();

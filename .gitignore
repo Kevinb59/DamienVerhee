@@ -7,3 +7,6 @@ instructions/
 .env
 .env.local
 .env.*.local
+
+# Dépendances
+node_modules/

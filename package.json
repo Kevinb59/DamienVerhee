@@ -1,0 +1,25 @@
+{
+  "name": "damienverhee",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "generate:content": "node scripts/generate-site-content.js",
+    "build": "npm run generate:content",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kevinb59/DamienVerhee.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Kevinb59/DamienVerhee/issues"
+  },
+  "homepage": "https://github.com/Kevinb59/DamienVerhee#readme",
+  "description": "",
+  "dependencies": {
+    "firebase-admin": "^13.8.0"
+  }
+}

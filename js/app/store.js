@@ -6,12 +6,20 @@
 import { getDataProvider } from './config.js'
 import * as mockRepository from './data/mockRepository.js'
 import * as firebaseRepository from './data/firebaseRepository.js'
+import * as staticRepository from './data/staticRepository.js'
 
 /**
  * @returns {typeof mockRepository}
  */
 function repo() {
-  return getDataProvider() === 'firebase' ? firebaseRepository : mockRepository
+  const provider = getDataProvider()
+  if (provider === 'firebase') {
+    return firebaseRepository
+  }
+  if (provider === 'mock') {
+    return mockRepository
+  }
+  return staticRepository
 }
 
 export const listArticles = (opts) => repo().listArticles(opts)

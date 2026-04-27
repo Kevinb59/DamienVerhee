@@ -1,14 +1,8 @@
 /**
  * Fausse BDD en mémoire (aucun localStorage) : même schéma que Firestore pour un remplacement direct via store.js → firebaseRepository.
- * Au chargement de la page, l’état est reconstruit depuis les modules seed (catalogDamienVerhee, etc.). Les CRUD admin ne survivent pas au F5.
+ * Les données seed locales ont été supprimées ; ce repository mock reste vide par défaut.
  */
 
-import { getDefaultProducts } from './catalogDamienVerhee.js'
-import { getSeedArticles } from './seedArticlesFictifs.js'
-import {
-  getSeedGalleryAlbums,
-  getSeedGalleryItems
-} from './seedGalleryFictif.js'
 
 /**
  * État runtime unique (session navigateur). Réinitialisé à chaque rechargement.
@@ -139,19 +133,24 @@ function deepClone(obj) {
 }
 
 /**
- * Fabrique l’état initial : données statiques éditables dans js/app/data/*.js (puis Firebase).
- * Galerie fixe : seedGalleryFictif.js (albums + items sous `images/articles/`, `images/prix-et-recompenses/`, `images/humour/`).
+ * Fabrique l’état initial (vide) pour éviter tout faux contenu local.
  *
  * @returns {{ articles: ArticleRecord[], galleryAlbums: GalleryAlbumRecord[], galleryItems: GalleryItemRecord[], products: ProductRecord[] }}
  */
 function createInitialState() {
   return {
-    // Articles fictifs (sans événements) : seedArticlesFictifs.js — médias `images/pic*.jpg`
-    articles: deepClone(getSeedArticles()),
-    galleryAlbums: deepClone(getSeedGalleryAlbums()),
-    galleryItems: deepClone(getSeedGalleryItems()),
-    // Boutique : catalogue dans catalogDamienVerhee.js (même forme que collection Firestore `products`).
-    products: deepClone(getDefaultProducts())
+    /**
+     * 1) But : neutraliser complètement les anciennes données fictives locales.
+     * 2) Variables clés :
+     *    - articles/galleryAlbums/galleryItems/products : désormais vides par défaut.
+     * 3) Flux :
+     *    - si le provider reste en mode mock, aucun faux contenu n’est affiché.
+     *    - les contenus réels doivent venir de Firebase (ou du JSON statique futur post-rebuild).
+     */
+    articles: deepClone([]),
+    galleryAlbums: deepClone([]),
+    galleryItems: deepClone([]),
+    products: deepClone([])
   }
 }
 
