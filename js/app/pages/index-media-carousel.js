@@ -4,6 +4,7 @@
  */
 import { listLatestCombinedGalleryMedia } from '../store.js'
 import { CLOUDINARY_PRESETS, optimizeCloudinaryImage } from '../cloudinary.js'
+import { resolveVideoPosterUrl } from '../video-poster.js'
 
 /** Durée alignée sur la transition CSS du track et du viewport (hauteur). */
 const TRACK_TRANSITION_MS = 400
@@ -22,51 +23,6 @@ function isDirectVideoFileUrl(url) {
   return /\.(mp4|webm|ogg|mov)(\?|#|$)/i.test(String(url || ''))
 }
 
-function extractYouTubeId(url) {
-  const raw = String(url || '').trim()
-  const patterns = [
-    /youtube\.com\/watch\?v=([a-zA-Z0-9_-]{6,})/i,
-    /youtu\.be\/([a-zA-Z0-9_-]{6,})/i,
-    /youtube\.com\/embed\/([a-zA-Z0-9_-]{6,})/i
-  ]
-  for (const re of patterns) {
-    const m = raw.match(re)
-    if (m?.[1]) {
-      return m[1]
-    }
-  }
-  return ''
-}
-
-function extractVimeoId(url) {
-  const raw = String(url || '').trim()
-  const m =
-    raw.match(/vimeo\.com\/(?:video\/)?(\d{6,})/i) ||
-    raw.match(/player\.vimeo\.com\/video\/(\d{6,})/i)
-  return m?.[1] || ''
-}
-
-/**
- * 1) But : obtenir une image de prévisualisation vidéo fiable (embed YouTube/Vimeo compris).
- * 2) Variables clés : thumbUrl (prioritaire), ytId, vimeoId.
- * 3) Flux : thumb explicite -> provider thumbnail -> URL vide.
- */
-function resolveVideoPosterUrl(videoUrl, thumbUrl) {
-  const explicit = String(thumbUrl || '').trim()
-  if (explicit) {
-    return explicit
-  }
-  const ytId = extractYouTubeId(videoUrl)
-  if (ytId) {
-    return `https://img.youtube.com/vi/${encodeURIComponent(ytId)}/hqdefault.jpg`
-  }
-  const vimeoId = extractVimeoId(videoUrl)
-  if (vimeoId) {
-    return `https://vumbnail.com/${encodeURIComponent(vimeoId)}.jpg`
-  }
-  return ''
-}
-
 /**
  * Construit le HTML d’une slide : zone média + bandeau optionnel (articles uniquement).
  *
@@ -78,21 +34,23 @@ function slideHtml(slide, isFixed) {
   const mediaUrl = isVideo
     ? optimizeCloudinaryImage(slide.url, CLOUDINARY_PRESETS.galleryPoster)
     : optimizeCloudinaryImage(slide.url, CLOUDINARY_PRESETS.articleHero)
-  const resolvedPoster = isVideo
-    ? resolveVideoPosterUrl(slide.url, slide.thumbUrl || slide.url)
-    : slide.thumbUrl || slide.url
-  const poster = optimizeCloudinaryImage(
-    resolvedPoster,
-    CLOUDINARY_PRESETS.galleryThumb
-  )
+  /**
+   * 1) But : ne pas afficher une miniature 640×640 dans le hero (marges jaunes + image « petite »).
+   * 2) Variables clés : `articleHero` pour les photos ; poster vidéo dérivé (YouTube/Vimeo) en thumb léger.
+   * 3) Flux : vidéo embed → poster optimisé thumb ; image → même URL que le hero avec preset large.
+   */
+  const videoStillRaw = isVideo ? resolveVideoPosterUrl(slide.url, slide.thumbUrl) : ''
+  const displaySrc = isVideo
+    ? optimizeCloudinaryImage(videoStillRaw, CLOUDINARY_PRESETS.galleryThumb)
+    : optimizeCloudinaryImage(slide.thumbUrl || slide.url, CLOUDINARY_PRESETS.articleHero)
   // Médias non visibles : pas de préchargement vidéo lourd ; le poster est préchargé côté JS (voisins).
   const videoPreload = 'none'
   const useNativeVideoPlayer = isVideo && isDirectVideoFileUrl(mediaUrl)
   const mediaBlock = isVideo
     ? useNativeVideoPlayer
-      ? `<video class="dv-index-media-carousel__video" src=${JSON.stringify(mediaUrl)} poster=${JSON.stringify(poster)} controls playsinline preload="${videoPreload}"></video>`
-      : `<img src=${JSON.stringify(poster)} alt="" data-position="center" /><span class="dv-media-thumb__play">▶</span>`
-    : `<img src=${JSON.stringify(poster)} alt="" data-position="center" />`
+      ? `<video class="dv-index-media-carousel__video" src=${JSON.stringify(mediaUrl)} poster=${JSON.stringify(displaySrc)} controls playsinline preload="${videoPreload}"></video>`
+      : `<img src=${JSON.stringify(displaySrc)} alt="" data-position="center" /><span class="dv-media-thumb__play">▶</span>`
+    : `<img src=${JSON.stringify(displaySrc)} alt="" data-position="center" />`
 
   const articleHref = slide.articleSlug
     ? `article.html?slug=${encodeURIComponent(slide.articleSlug)}`
@@ -118,7 +76,7 @@ function slideHtml(slide, isFixed) {
       : ''
 
   const cls = isFixed ? ' class="dv-slide--fixed"' : ''
-  const dataAttrs = `data-media-type=${JSON.stringify(slide.type)} data-media-url=${JSON.stringify(mediaUrl)} data-poster-url=${JSON.stringify(poster)}`
+  const dataAttrs = `data-media-type=${JSON.stringify(slide.type)} data-media-url=${JSON.stringify(mediaUrl)} data-poster-url=${JSON.stringify(displaySrc)}`
   return `<article${cls} ${dataAttrs}>
 		<div class="image">${mediaBlock}</div>
 		${banner}
@@ -307,8 +265,12 @@ function runCarousel(section, dotsRoot) {
     let w = 0
     let h = 0
     if (natW > 0 && natH > 0) {
-      // Autoriser l'agrandissement des miniatures trop petites (ex: thumbs YouTube).
-      const scale = Math.min(maxW / natW, maxH / natH)
+      /**
+       * 1) But : borner le zoom pour ne pas exploser le viewport (miniatures type 120×90).
+       * 2) Variables clés : scale plafonné à 1 pour rester dans maxW/maxH.
+       * 3) Flux : même logique qu’avant correctif — agrandissement uniquement via CSS si besoin.
+       */
+      const scale = Math.min(maxW / natW, maxH / natH, 1)
       w = natW * scale
       h = natH * scale
     } else {

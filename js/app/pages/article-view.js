@@ -4,6 +4,7 @@
 import { getArticle, getArticleBySlug } from '../store.js'
 import { initMediaModal } from '../ui/mediaModal.js'
 import { CLOUDINARY_PRESETS, optimizeCloudinaryImage } from '../cloudinary.js'
+import { resolveVideoPosterUrl } from '../video-poster.js'
 
 function esc(s) {
   const d = document.createElement('div')
@@ -13,56 +14,6 @@ function esc(s) {
 
 function qs(name) {
   return new URLSearchParams(window.location.search).get(name)
-}
-
-function extractYouTubeId(url) {
-  const raw = String(url || '').trim()
-  const patterns = [
-    /youtube\.com\/watch\?v=([a-zA-Z0-9_-]{6,})/i,
-    /youtu\.be\/([a-zA-Z0-9_-]{6,})/i,
-    /youtube\.com\/embed\/([a-zA-Z0-9_-]{6,})/i
-  ]
-  for (const re of patterns) {
-    const m = raw.match(re)
-    if (m?.[1]) {
-      return m[1]
-    }
-  }
-  return ''
-}
-
-function extractVimeoId(url) {
-  const raw = String(url || '').trim()
-  const m =
-    raw.match(/vimeo\.com\/(?:video\/)?(\d{6,})/i) ||
-    raw.match(/player\.vimeo\.com\/video\/(\d{6,})/i)
-  return m?.[1] || ''
-}
-
-/**
- * 1) But : garantir une vraie miniature visuelle pour les vidéos (YouTube/Vimeo inclus).
- * 2) Variables clés :
- *    - explicitThumb : miniature fournie en BDD si disponible.
- *    - ytId/vimeoId : extraction d'identifiant depuis URL vidéo.
- * 3) Flux :
- *    - priorité au thumb explicite
- *    - fallback vers provider thumbnail
- *    - sinon chaîne vide (affichage fond + icône play uniquement)
- */
-function resolveVideoPosterUrl(videoUrl, explicitThumb) {
-  const thumb = String(explicitThumb || '').trim()
-  if (thumb) {
-    return thumb
-  }
-  const ytId = extractYouTubeId(videoUrl)
-  if (ytId) {
-    return `https://img.youtube.com/vi/${encodeURIComponent(ytId)}/hqdefault.jpg`
-  }
-  const vimeoId = extractVimeoId(videoUrl)
-  if (vimeoId) {
-    return `https://vumbnail.com/${encodeURIComponent(vimeoId)}.jpg`
-  }
-  return ''
 }
 
 /**
