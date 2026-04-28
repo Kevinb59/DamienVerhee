@@ -520,14 +520,14 @@ html {
   margin: 0;
   font-size: 0.92rem;
   line-height: 1.4;
-  color: rgba(255, 255, 255, 0.92);
+  color: inherit;
 }
 
 .dv-product-card__reviews-link {
   display: inline-block;
   margin-top: 0.35rem;
   font-size: 0.88rem;
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 /* ——— Accueil : 3 derniers articles (miniature ronde + accroche une ligne) ——— */
