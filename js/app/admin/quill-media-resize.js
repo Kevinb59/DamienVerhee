@@ -16,7 +16,10 @@
  */
 export function setupQuillMediaResize(quill) {
 	const editorEl = quill.root;
-	const wrap = document.querySelector('.dv-admin__quill-wrap');
+	// 1) But : plusieurs éditeurs Quill (article + newsletter) : barre de taille rattachée au wrap le plus proche.
+	// 2) Variable clé : `wrap` = ancêtre `.dv-admin__quill-wrap` du corps d’édition.
+	// 3) Flux : si pas de wrap (hors admin), on n’installe pas la barre.
+	const wrap = editorEl.closest('.dv-admin__quill-wrap');
 	if (!wrap || !editorEl) {
 		return;
 	}

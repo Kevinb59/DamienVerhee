@@ -132,6 +132,15 @@
                 >
                   Boutique
                 </button>
+                <button
+                  type="button"
+                  class="dv-admin__tab dv-admin__tab--newsletter"
+                  data-tab="newsletter"
+                  role="tab"
+                  aria-selected="false"
+                >
+                  Newsletter
+                </button>
               </div>
             </section>
 
@@ -545,6 +554,86 @@
                         Nouveau produit
                       </button>
                     </div>
+                  </section>
+                </div>
+              </div>
+
+              <div
+                id="tab-newsletter"
+                class="dv-admin__panel"
+                role="tabpanel"
+                aria-labelledby="newsletter-tab-label"
+              >
+                <h2 id="newsletter-tab-label" class="dv-admin__panel-title">
+                  Newsletter (Brevo)
+                </h2>
+                <div class="dv-admin__newsletter-layout">
+                  <section
+                    class="dv-admin__block dv-admin__block--edit"
+                    aria-labelledby="newsletter-compose-heading"
+                  >
+                    <h3
+                      id="newsletter-compose-heading"
+                      class="dv-admin__section-label dv-admin__newsletter-compose-heading"
+                    >
+                      Texte d’introduction
+                    </h3>
+                    <p class="dv-hint">
+                      Rédigez le corps du mail (affiché au-dessus de la liste d’articles
+                      sélectionnés). Les inscriptions se font sur l’accueil ; la liste et le
+                      désabonnement sont gérés dans Brevo.
+                    </p>
+                    <div class="dv-admin__field">
+                      <label for="newsletter-subject">Objet de la newsletter</label>
+                      <input
+                        type="text"
+                        id="newsletter-subject"
+                        placeholder="Ex : Les nouveautés de la semaine"
+                      />
+                    </div>
+                    <div class="dv-admin__quill-wrap dv-admin__quill-wrap--newsletter">
+                      <div id="newsletter-editor"></div>
+                    </div>
+                    <div class="dv-admin__actions dv-admin__newsletter-export-actions">
+                      <button type="button" class="button" id="btn-newsletter-test">
+                        Tester
+                      </button>
+                      <button type="button" class="button primary" id="btn-newsletter-launch">
+                        Lancer campagne
+                      </button>
+                      <a
+                        class="button"
+                        id="btn-newsletter-relance"
+                        href="https://app.brevo.com/campaigns/listing"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >Relance</a
+                      >
+                    </div>
+                    <p
+                      id="newsletter-export-status"
+                      class="dv-hint dv-admin__newsletter-export-status"
+                      role="status"
+                      aria-live="polite"
+                    ></p>
+                  </section>
+
+                  <section
+                    class="dv-admin__newsletter-list-band"
+                    aria-labelledby="newsletter-articles-heading"
+                  >
+                    <header class="major dv-admin__newsletter-list-head">
+                      <h2 id="newsletter-articles-heading">Articles à inclure</h2>
+                      <p>
+                        Cochez les articles à ajouter sous votre texte dans l’e-mail.
+                        Le test est envoyé uniquement au gestionnaire ; « Lancer campagne »
+                        envoie la campagne Brevo à la liste d’abonnés.
+                      </p>
+                    </header>
+                    <ul
+                      id="admin-newsletter-article-list"
+                      class="admin-list dv-admin-list dv-admin-list--newsletter"
+                    ></ul>
                   </section>
                 </div>
               </div>

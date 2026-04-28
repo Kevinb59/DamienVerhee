@@ -202,6 +202,7 @@
               </p>
             </header>
             <form
+              id="index-newsletter-form"
               method="post"
               action="#"
               class="combined"
@@ -219,6 +220,12 @@
               />
               <input type="submit" class="primary" value="S’inscrire" />
             </form>
+            <p
+              id="newsletter-form-status"
+              class="dv-index-newsletter-status"
+              role="status"
+              aria-live="polite"
+            ></p>
           </section>
 
           <!-- Section contact : bloc blanc en 2 colonnes (auteur / maison d’édition). -->
@@ -423,5 +430,6 @@
       src="js/app/pages/index-spotlights-section.js"
     ></script>
     <script type="module" src="js/app/pages/index-contact-forms.js"></script>
+    <script type="module" src="js/app/pages/index-newsletter-form.js"></script>
   </body>
 </html>

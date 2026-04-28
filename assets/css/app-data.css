@@ -1483,10 +1483,10 @@ html {
   text-transform: uppercase;
 }
 
-/* Grille 3 colonnes égales : chaque onglet occupe exactement un tiers ; pas de gouttière pour un ruban continu. */
+/* Grille 4 colonnes : Articles, Galerie, Boutique, Newsletter — ruban continu sans gouttière. */
 .dv-admin__masthead-tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 0;
   margin: 0;
   padding: 0;
@@ -1532,6 +1532,10 @@ html {
   background-color: #fed586;
 }
 
+.dv-admin__masthead-tabs .dv-admin__tab--newsletter {
+  background-color: #a969c7;
+}
+
 /* Inactif : léger assombrissement ; actif : barre inférieure pour marquer la sélection. */
 .dv-admin__masthead-tabs .dv-admin__tab:not(.is-active) {
   filter: brightness(0.94);
@@ -1558,6 +1562,11 @@ html {
 .dv-admin__masthead-tabs .dv-admin__tab--shop:hover,
 .dv-admin__masthead-tabs .dv-admin__tab--shop:active {
   background-color: #fed586 !important;
+}
+
+.dv-admin__masthead-tabs .dv-admin__tab--newsletter:hover,
+.dv-admin__masthead-tabs .dv-admin__tab--newsletter:active {
+  background-color: #a969c7 !important;
 }
 
 .dv-admin__masthead-tabs .dv-admin__tab:hover {
@@ -1786,6 +1795,191 @@ html {
 
 .dv-admin__articles-list-band .button.primary:active {
   background-color: #7cc8cd;
+}
+
+/* ——— Newsletter admin : édition blanche + bandeau liste (#a969c7) ——— */
+.dv-admin__newsletter-compose-heading {
+  margin-top: 0;
+}
+
+.dv-admin__newsletter-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.dv-admin__newsletter-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.dv-admin__newsletter-export-status {
+  min-height: 1.25em;
+}
+
+.dv-admin__newsletter-list-band {
+  background-color: #a969c7;
+  color: rgba(255, 255, 255, 0.78);
+  margin-left: -6em;
+  margin-right: -6em;
+  margin-bottom: 0;
+  padding: 3em 6em 4em;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media screen and (max-width: 1680px) {
+  .dv-admin__newsletter-list-band {
+    margin-left: -5em;
+    margin-right: -5em;
+    padding: 3em 5em 3.5em;
+  }
+}
+
+@media screen and (max-width: 736px) {
+  .dv-admin__newsletter-list-band {
+    margin-left: -2em;
+    margin-right: -2em;
+    padding: 2.5em 2em 3em;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .dv-admin__newsletter-list-band {
+    margin-left: -1.5em;
+    margin-right: -1.5em;
+    padding: 2.25em 1.5em 2.75em;
+  }
+}
+
+.dv-admin__newsletter-list-head {
+  text-align: center;
+}
+
+.dv-admin__newsletter-list-head h2 {
+  color: #ffffff;
+  font-size: 1.35rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 0.35em;
+}
+
+.dv-admin__newsletter-list-head p {
+  color: rgba(255, 255, 255, 0.82);
+  margin: 0 auto 2em;
+  max-width: 38em;
+  line-height: 1.55;
+  font-size: 0.95rem;
+}
+
+.dv-admin__newsletter-list-band .dv-admin-list--newsletter {
+  max-height: min(42vh, 440px);
+  margin: 0 0 1rem;
+  width: 100%;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dv-admin__newsletter-list-band .dv-admin-list--newsletter li {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  padding: 0.65rem 0;
+}
+
+.dv-admin__newsletter-list-band .dv-admin-list--newsletter li:last-child {
+  border-bottom: none;
+}
+
+.dv-admin__newsletter-list-band .dv-admin-list--newsletter li:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dv-admin__newsletter-row__main {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.dv-admin__newsletter-row__title {
+  display: block;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.dv-admin__newsletter-row__meta {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.dv-admin__newsletter-row__check {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.dv-admin__newsletter-row__check input[type='checkbox'] {
+  -moz-appearance: auto !important;
+  -webkit-appearance: checkbox !important;
+  appearance: auto !important;
+  display: inline-block !important;
+  float: none !important;
+  opacity: 1 !important;
+  width: 1.1rem !important;
+  height: 1.1rem !important;
+  margin: 0 !important;
+  z-index: auto !important;
+  accent-color: #ffffff;
+}
+
+/* Index : message sous le formulaire newsletter */
+.dv-index-newsletter-status {
+  margin: 1rem auto 0;
+  max-width: 32rem;
+  text-align: center;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.dv-index-newsletter-status[data-state='success'] {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.dv-index-newsletter-status[data-state='error'] {
+  color: #ffe0e0;
+}
+
+@media screen and (max-width: 1100px) {
+  .dv-admin__masthead-tabs .dv-admin__tab {
+    font-size: clamp(0.82rem, 2.2vw, 1.25rem);
+    padding: 1.25rem 0.45rem;
+  }
+}
+
+@media screen and (max-width: 720px) {
+  .dv-admin__masthead-tabs {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* Onglet Boutique : formulaire au-dessus, liste en bandeau jaune en dessous (même logique que l’onglet Articles). */

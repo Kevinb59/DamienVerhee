@@ -1,5 +1,5 @@
 /**
- * Console d’administration : articles (Quill + événements + médias), galerie fixe (glisser-déposer), boutique.
+ * Console d’administration : articles (Quill + événements + médias), galerie fixe (glisser-déposer), boutique, newsletter (Quill + export HTML Brevo).
  * Dépendances globales : Quill, Sortable (chargées dans admin.html avant ce module).
  */
 import {
@@ -210,10 +210,10 @@ function askQuillImageInsertMode() {
 
 /**
  * Ajoute title + aria-label sur chaque contrôle du toolbar Quill (infobulle au survol).
- * Cible : .dv-admin__quill-wrap .ql-toolbar (thème Snow 1.3.x).
+ * Cible : chaque `.dv-admin__quill-wrap .ql-toolbar` (thème Snow 1.3.x) — article + newsletter.
  */
 function attachQuillToolbarTooltips() {
-	const toolbar = document.querySelector('.dv-admin__quill-wrap .ql-toolbar');
+	document.querySelectorAll('.dv-admin__quill-wrap .ql-toolbar').forEach((toolbar) => {
 	if (!toolbar) {
 		return;
 	}
@@ -357,56 +357,74 @@ function attachQuillToolbarTooltips() {
 			});
 		}
 	});
+	});
 }
 
-const quill = new Quill('#article-editor', {
+/** Configuration commune barre d’outils Quill (articles + newsletter). */
+const QUILL_TOOLBAR_ROWS = [
+	[{ header: [1, 2, 3, false] }],
+	[{ size: SizeStyle.whitelist }],
+	['bold', 'italic', 'underline', 'strike'],
+	[{ color: [] }, { background: [] }],
+	[{ align: [] }],
+	[{ list: 'ordered' }, { list: 'bullet' }],
+	['blockquote', 'code-block'],
+	['link', 'image', 'video'],
+	['clean'],
+];
+
+/**
+ * Handlers image / vidéo pour une instance Quill (résolue à l’appel : évite la référence circulaire à la création).
+ *
+ * @param {() => import('quill').default} getQuill
+ * @param {string} [uploadImageFolder] Dossier Cloudinary pour les images importées depuis l’éditeur.
+ */
+function buildQuillToolbarHandlers(getQuill, uploadImageFolder = 'articles/editor/images') {
+	return {
+		async image() {
+			const quillInstance = getQuill();
+			const mode = await askQuillImageInsertMode();
+			if (!mode) {
+				return;
+			}
+			let imageUrl = '';
+			if (mode === 'file') {
+				const file = await pickFileFromDevice('image/*');
+				const uploaded = await uploadFileWithFeedback(file, uploadImageFolder);
+				imageUrl = uploaded?.url || '';
+			} else {
+				imageUrl = String(window.prompt('Adresse web (URL) de l’image :') || '').trim();
+			}
+			if (!imageUrl) {
+				return;
+			}
+			const range = quillInstance.getSelection(true);
+			quillInstance.insertEmbed(range.index, 'image', imageUrl);
+		},
+		async video() {
+			const quillInstance = getQuill();
+			const videoUrl = String(
+				window.prompt(
+					'Lien de la vidéo (YouTube, Vimeo ou adresse directe du fichier) :',
+				) || '',
+			).trim();
+			if (!videoUrl) {
+				return;
+			}
+			const range = quillInstance.getSelection(true);
+			quillInstance.insertEmbed(range.index, 'video', videoUrl);
+		},
+	};
+}
+
+/** @type {import('quill').default} */
+let quill;
+quill = new Quill('#article-editor', {
 	theme: 'snow',
 	modules: {
 		toolbar: {
-			container: [
-				[{ header: [1, 2, 3, false] }],
-				[{ size: SizeStyle.whitelist }],
-				['bold', 'italic', 'underline', 'strike'],
-				[{ color: [] }, { background: [] }],
-				[{ align: [] }],
-				[{ list: 'ordered' }, { list: 'bullet' }],
-				['blockquote', 'code-block'],
-				['link', 'image', 'video'],
-				['clean'],
-			],
-			handlers: {
-				async image() {
-					const mode = await askQuillImageInsertMode();
-					if (!mode) {
-						return;
-					}
-					let imageUrl = '';
-					if (mode === 'file') {
-						const file = await pickFileFromDevice('image/*');
-						const uploaded = await uploadFileWithFeedback(file, 'articles/editor/images');
-						imageUrl = uploaded?.url || '';
-					} else {
-						imageUrl = String(window.prompt('Adresse web (URL) de l’image :') || '').trim();
-					}
-					if (!imageUrl) {
-						return;
-					}
-					const range = quill.getSelection(true);
-					quill.insertEmbed(range.index, 'image', imageUrl);
-				},
-				async video() {
-					const videoUrl = String(
-						window.prompt(
-							'Lien de la vidéo (YouTube, Vimeo ou adresse directe du fichier) :',
-						) || '',
-					).trim();
-					if (!videoUrl) {
-						return;
-					}
-					const range = quill.getSelection(true);
-					quill.insertEmbed(range.index, 'video', videoUrl);
-				},
-			},
+			container: QUILL_TOOLBAR_ROWS,
+			handlers: buildQuillToolbarHandlers(() => quill),
 		},
 	},
 });
@@ -461,6 +479,223 @@ function syncEventFieldsVisibility() {
 	}
 }
 
+// ——— Newsletter : éditeur + sélection d’articles + actions Brevo (test / campagne) ———
+/** @type {import('quill').default | null} */
+let newsletterQuill = null;
+
+/** Toolbar volontairement restreinte pour garder un rendu e-mail robuste dans Brevo/clients mail. */
+const NEWSLETTER_TOOLBAR_ROWS = [
+	[{ header: [2, 3, false] }],
+	['bold', 'italic', 'underline'],
+	[{ list: 'ordered' }, { list: 'bullet' }],
+	['link'],
+	['clean'],
+];
+
+/**
+ * Échappe le texte pour insertion dans du HTML statique (titres / extraits mail).
+ *
+ * @param {string} s
+ * @returns {string}
+ */
+function escapeHtmlText(s) {
+	return String(s || '')
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;');
+}
+
+/**
+ * Construit l’URL absolue d’un article à partir du slug.
+ *
+ * 1) But : éviter les liens relatifs cassés dans les boîtes mail.
+ * 2) Variables clés :
+ *    - `window.__SITE_BASE_URL__` (optionnel) pour forcer le domaine final.
+ *    - `window.location.origin` comme fallback quand l’admin est servi en HTTP(S).
+ * 3) Flux : base explicite -> origine navigateur -> fallback relatif.
+ *
+ * @param {string} slug
+ * @returns {string}
+ */
+function buildNewsletterArticleUrl(slug) {
+	const cleanSlug = String(slug || '').trim();
+	const relative = `article.html?slug=${encodeURIComponent(cleanSlug)}`;
+	const explicitBase =
+		typeof window !== 'undefined' && window.__SITE_BASE_URL__ != null
+			? String(window.__SITE_BASE_URL__).trim().replace(/\/$/, '')
+			: '';
+	if (explicitBase) {
+		return `${explicitBase}/${relative}`;
+	}
+	if (typeof window !== 'undefined' && window.location.protocol !== 'file:' && window.location.origin) {
+		return `${window.location.origin.replace(/\/$/, '')}/${relative}`;
+	}
+	return relative;
+}
+
+/**
+ * Récupère une miniature article pour l’e-mail (image principale en priorité).
+ *
+ * @param {any} article
+ * @returns {string}
+ */
+function resolveNewsletterThumbUrl(article) {
+	const mediaItems = Array.isArray(article?.media) ? article.media : [];
+	const fromMedia = mediaItems.find((m) => String(m?.type || '').toLowerCase() === 'image' && m?.url)?.url;
+	if (fromMedia) {
+		return String(fromMedia);
+	}
+	const extracted = extractMediaFromHtml(String(article?.bodyHtml || ''));
+	const fromExtracted = extracted.find((m) => String(m?.type || '').toLowerCase() === 'image' && m?.url)?.url;
+	return fromExtracted ? String(fromExtracted) : '';
+}
+
+/**
+ * Crée l’éditeur newsletter une seule fois (lazy à l’ouverture de l’onglet).
+ *
+ * @returns {import('quill').default}
+ */
+function ensureNewsletterQuill() {
+	if (newsletterQuill) {
+		return newsletterQuill;
+	}
+	let nq;
+	nq = new Quill('#newsletter-editor', {
+		theme: 'snow',
+		modules: {
+			toolbar: {
+				container: NEWSLETTER_TOOLBAR_ROWS,
+				handlers: buildQuillToolbarHandlers(() => nq, 'newsletter/editor/images'),
+			},
+		},
+	});
+	newsletterQuill = nq;
+	attachQuillToolbarTooltips();
+	setupQuillMediaResize(newsletterQuill);
+	return newsletterQuill;
+}
+
+/**
+ * Recharge la liste des articles avec cases « Inclure » (données Firestore comme l’onglet Articles).
+ */
+async function refreshNewsletterArticleList() {
+	const ul = document.getElementById('admin-newsletter-article-list');
+	if (!ul) {
+		return;
+	}
+	ul.innerHTML = '';
+	const items = await listArticles({ publishedOnly: false });
+	for (const a of items) {
+		const slug = String(a.slug || '').trim();
+		const plainExcerpt = String(a.excerpt || '')
+			.replace(/<[^>]+>/g, ' ')
+			.replace(/\s+/g, ' ')
+			.trim();
+		const li = document.createElement('li');
+		li.dataset.slug = slug;
+		li.dataset.title = String(a.title || '');
+		li.dataset.excerpt = plainExcerpt;
+		const thumb = resolveNewsletterThumbUrl(a);
+		const defaultChecked = false;
+		li.innerHTML = `
+			<span class="dv-admin__newsletter-row__main">
+				<span class="dv-admin__newsletter-row__title"></span>
+				<span class="dv-admin__newsletter-row__meta"></span>
+			</span>
+			<label class="dv-admin__newsletter-row__check">
+				<input type="checkbox" class="dv-admin__newsletter-article-cb" ${defaultChecked ? 'checked' : ''} />
+				<span>Inclure</span>
+			</label>
+		`;
+		li.dataset.thumb = thumb;
+		const titleEl = li.querySelector('.dv-admin__newsletter-row__title');
+		const metaEl = li.querySelector('.dv-admin__newsletter-row__meta');
+		const cb = li.querySelector('.dv-admin__newsletter-article-cb');
+		if (titleEl) {
+			titleEl.textContent = a.title || 'Sans titre';
+		}
+		if (metaEl) {
+			const bits = [];
+			if (!slug) {
+				bits.push('slug manquant (ignoré à l’export)');
+			}
+			if (a.published === false) {
+				bits.push('brouillon');
+			}
+			metaEl.textContent = bits.join(' · ') || ' ';
+		}
+		if (cb) {
+			const shortTitle = String(a.title || 'Article').slice(0, 120);
+			cb.setAttribute('aria-label', `Inclure « ${shortTitle} » dans le corps du mail`);
+		}
+		ul.appendChild(li);
+	}
+}
+
+/**
+ * Assemble le HTML e-mail final : intro auteur + cartes articles (miniature ronde + titre + extrait + bouton Lire).
+ *
+ * @returns {string}
+ */
+function buildNewsletterEmailHtml() {
+	const nq = ensureNewsletterQuill();
+	const intro = nq.root.innerHTML;
+	const ul = document.getElementById('admin-newsletter-article-list');
+	const rows = ul ? Array.from(ul.querySelectorAll('li')) : [];
+	const blocks = [];
+	for (const li of rows) {
+		const cb = li.querySelector('.dv-admin__newsletter-article-cb');
+		if (!cb?.checked) {
+			continue;
+		}
+		const slug = String(li.dataset.slug || '').trim();
+		const title = String(li.dataset.title || '').trim();
+		const excerpt = String(li.dataset.excerpt || '').trim();
+		const thumb = String(li.dataset.thumb || '').trim();
+		if (!slug) {
+			continue;
+		}
+		const href = buildNewsletterArticleUrl(slug);
+		const thumbBlock = thumb
+			? `<td style="width:84px;vertical-align:top;padding-right:14px;">
+					<img src="${escapeHtmlText(thumb)}" alt="" width="70" height="70" style="display:block;width:70px;height:70px;border-radius:50%;object-fit:cover;border:0;" />
+				</td>`
+			: '';
+		blocks.push(
+			`<tr>
+				<td style="padding:16px 0;border-bottom:1px solid #ececf2;">
+					<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+						<tr>
+							${thumbBlock}
+							<td style="vertical-align:top;">
+								<div style="font-size:18px;line-height:1.3;font-weight:700;color:#3e4450;">${escapeHtmlText(title)}</div>
+								${excerpt ? `<div style="margin-top:7px;font-size:14px;line-height:1.45;color:#626b78;">${escapeHtmlText(excerpt)}</div>` : ''}
+								<div style="margin-top:12px;">
+									<a href="${escapeHtmlText(href)}" style="display:inline-block;padding:9px 16px;border-radius:999px;background:#a969c7;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;">Lire</a>
+								</div>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>`,
+		);
+	}
+	return (
+		`<div style="margin:0;padding:0;background:#f5f4fa;">` +
+		`<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f5f4fa;padding:24px 0;">` +
+		`<tr><td align="center">` +
+		`<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="640" style="max-width:640px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;">` +
+		`<tr><td style="padding:28px 28px 20px;">${intro}</td></tr>` +
+		(blocks.length
+			? `<tr><td style="padding:0 28px 28px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${blocks.join('')}</table></td></tr>`
+			: '') +
+		`</table>` +
+		`</td></tr></table>` +
+		`</div>`
+	);
+}
+
 // ——— Onglets admin (boutons dans .dv-admin__masthead-tabs) ———
 // But : synchroniser les classes/ARIA des boutons avec l’affichage des panneaux #tab-*.
 // Clé : data-tab → id du panneau tab-${tab} ; rafraîchissement des listes à l’ouverture de chaque module.
@@ -484,7 +719,79 @@ document.querySelectorAll('.dv-admin__masthead-tabs button').forEach((btn) => {
 		if (tab === 'shop') {
 			refreshProductList();
 		}
+		if (tab === 'newsletter') {
+			ensureNewsletterQuill();
+			void refreshNewsletterArticleList();
+		}
 	});
+});
+
+/**
+ * Appel API admin pour une action campagne newsletter Brevo.
+ *
+ * @param {'test'|'launch'} action
+ * @returns {Promise<void>}
+ */
+async function runNewsletterCampaignAction(action) {
+	const status = document.getElementById('newsletter-export-status');
+	if (status) {
+		status.textContent = '';
+	}
+	const subject = String(document.getElementById('newsletter-subject')?.value || '').trim();
+	if (!subject) {
+		if (status) {
+			status.textContent = 'Renseignez un objet de newsletter avant de continuer.';
+		}
+		return;
+	}
+	const htmlContent = buildNewsletterEmailHtml();
+	const token = await getCurrentAdminIdToken();
+	const res = await fetch(getApiUrl('/api/newsletter-campaign'), {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+			Authorization: `Bearer ${token}`,
+		},
+		body: JSON.stringify({ action, subject, htmlContent }),
+	});
+	const data = await res.json().catch(() => ({}));
+	if (!res.ok || data.ok === false) {
+		throw new Error(String(data?.message || 'Action newsletter impossible.'));
+	}
+	if (status) {
+		status.textContent = String(data?.message || (action === 'test' ? 'Test envoyé.' : 'Campagne lancée.'));
+	}
+}
+
+document.getElementById('btn-newsletter-test')?.addEventListener('click', async () => {
+	try {
+		await runNewsletterCampaignAction('test');
+	} catch (err) {
+		const status = document.getElementById('newsletter-export-status');
+		if (status) {
+			status.textContent = err instanceof Error ? err.message : 'Erreur pendant le test.';
+		}
+	}
+});
+
+document.getElementById('btn-newsletter-launch')?.addEventListener('click', async () => {
+	try {
+		await runNewsletterCampaignAction('launch');
+	} catch (err) {
+		const status = document.getElementById('newsletter-export-status');
+		if (status) {
+			status.textContent = err instanceof Error ? err.message : 'Erreur pendant le lancement.';
+		}
+	}
+});
+
+document.getElementById('btn-newsletter-relance')?.addEventListener('click', () => {
+	const status = document.getElementById('newsletter-export-status');
+	if (status) {
+		status.textContent =
+			'Le bouton Relance ouvre la page Brevo des campagnes. On pourra remplacer ce lien quand vous aurez l’URL précise.';
+	}
 });
 
 // ——— Articles : liste / formulaire ———
