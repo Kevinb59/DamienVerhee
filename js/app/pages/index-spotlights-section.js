@@ -7,6 +7,7 @@ import { CLOUDINARY_PRESETS, optimizeCloudinaryImage } from '../cloudinary.js'
 /** Texte affiché lorsqu’aucun jour à événement n’est sélectionné (ou jour sans événement). */
 const HINT_EMPTY =
   'Cliquez sur un événement sur le calendrier pour en savoir plus.'
+const ARTICLE_THUMB_FALLBACK = 'images/blanked.webp'
 
 /**
  * Échappe du texte pour insertion dans du HTML.
@@ -120,13 +121,19 @@ function renderEventDetail(article) {
   const medias = Array.isArray(article.media) ? article.media : []
   const firstMedia = medias[0] || null
   const thumbSrc = firstMedia ? firstMedia.thumbUrl || firstMedia.url || '' : ''
+  /**
+   * 1) But : conserver une vignette visible même sans média article.
+   * 2) Variables clés :
+   *    - `thumbSrc` : miniature issue du contenu si disponible.
+   *    - `ARTICLE_THUMB_FALLBACK` : image neutre commune.
+   * 3) Flux : source article -> fallback `blanked.webp` -> rendu image optimisée.
+   */
+  const finalThumbSrc = thumbSrc || ARTICLE_THUMB_FALLBACK
   const optimizedThumbSrc = optimizeCloudinaryImage(
-    thumbSrc,
+    finalThumbSrc,
     CLOUDINARY_PRESETS.articleThumb
   )
-  const thumbHtml = thumbSrc
-    ? `<span class="dv-event-detail__thumb-wrap"><img class="dv-event-detail__thumb" src="${esc(optimizedThumbSrc)}" alt="" loading="lazy" decoding="async" /></span>`
-    : `<span class="dv-event-detail__thumb-wrap dv-event-detail__thumb-wrap--empty" aria-hidden="true"></span>`
+  const thumbHtml = `<span class="dv-event-detail__thumb-wrap"><img class="dv-event-detail__thumb" src="${esc(optimizedThumbSrc)}" alt="" loading="lazy" decoding="async" /></span>`
 
   root.innerHTML = `
 		${thumbHtml}

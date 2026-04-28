@@ -5,6 +5,8 @@ import { listArticles } from '../store.js'
 import { initMediaModal } from '../ui/mediaModal.js'
 import { CLOUDINARY_PRESETS, optimizeCloudinaryImage } from '../cloudinary.js'
 
+const ARTICLE_THUMB_FALLBACK = 'images/blanked.webp'
+
 function esc(s) {
   const d = document.createElement('div')
   d.textContent = s
@@ -60,10 +62,19 @@ async function render() {
       const medias = Array.isArray(a.media) ? a.media : []
       const firstMedia = medias[0] || null
       const thumbSrc = firstMedia ? firstMedia.thumbUrl || firstMedia.url || '' : ''
-      const optimizedThumbSrc = optimizeCloudinaryImage(thumbSrc, CLOUDINARY_PRESETS.articleThumb)
-      const thumbHtml = thumbSrc
-        ? `<span class="dv-article-list__thumb-wrap"><img class="dv-article-list__thumb" src="${esc(optimizedThumbSrc)}" alt="" loading="lazy" decoding="async" /></span>`
-        : `<span class="dv-article-list__thumb-wrap dv-article-list__thumb-wrap--empty" aria-hidden="true"></span>`
+      /**
+       * 1) But : imposer une miniature même sans média article.
+       * 2) Variables clés :
+       *    - `thumbSrc` : source venant du contenu article (si présente).
+       *    - `ARTICLE_THUMB_FALLBACK` : image neutre commune sur le site.
+       * 3) Flux : source article prioritaire -> fallback `blanked.webp` -> optimisation d’affichage.
+       */
+      const finalThumbSrc = thumbSrc || ARTICLE_THUMB_FALLBACK
+      const optimizedFinalThumbSrc = optimizeCloudinaryImage(
+        finalThumbSrc,
+        CLOUDINARY_PRESETS.articleThumb
+      )
+      const thumbHtml = `<span class="dv-article-list__thumb-wrap"><img class="dv-article-list__thumb" src="${esc(optimizedFinalThumbSrc)}" alt="" loading="lazy" decoding="async" /></span>`
 
       li.innerHTML = `
 				${thumbHtml}

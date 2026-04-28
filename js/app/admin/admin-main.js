@@ -667,7 +667,12 @@ function buildNewsletterEmailHtml() {
 			continue;
 		}
 		const href = buildNewsletterArticleUrl(slug);
-		const thumbUrl = thumb || `${siteBase}/images/portrait.webp`;
+		/**
+		 * 1) But : uniformiser le fallback miniatures newsletter avec le site public.
+		 * 2) Variables clés : `thumb` (média article) et fallback `images/blanked.webp`.
+		 * 3) Flux : miniature article prioritaire, sinon image neutre dédiée.
+		 */
+		const thumbUrl = thumb || `${siteBase}/images/blanked.webp`;
 		blocks.push(
 			`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #e8eaf0;${blocks.length > 0 ? ' margin-top:26px;' : ''}">
 				<tr>

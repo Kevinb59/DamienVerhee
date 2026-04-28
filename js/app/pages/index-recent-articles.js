@@ -5,7 +5,7 @@
 import { listLatestArticles } from '../store.js'
 import { CLOUDINARY_PRESETS, optimizeCloudinaryImage } from '../cloudinary.js'
 
-const PLACEHOLDER_IMG = 'images/pic01.jpg'
+const PLACEHOLDER_IMG = 'images/blanked.webp'
 
 function esc(s) {
   const d = document.createElement('div')
