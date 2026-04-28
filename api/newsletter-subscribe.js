@@ -72,9 +72,15 @@ module.exports = async function handler(req, res) {
 		const brevoJson = await brevoRes.json().catch(() => ({}))
 
 		if (brevoRes.ok) {
+			/**
+			 * 1) But : rassurer l’utilisateur sur la gestion du consentement.
+			 * 2) Variable clé : message de confirmation affiché après inscription.
+			 * 3) Flux : succès Brevo -> réponse API enrichie -> affichage front.
+			 */
 			return res.status(200).json({
 				ok: true,
-				message: 'Merci ! Vous êtes inscrit·e à la newsletter.',
+				message:
+					'Merci ! Vous êtes inscrit·e à la newsletter. Vous pouvez vous désinscrire à tout moment depuis nos newsletters.',
 			})
 		}
 

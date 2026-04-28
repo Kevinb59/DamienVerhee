@@ -507,13 +507,32 @@ function escapeHtmlText(s) {
 }
 
 /**
- * Construit l’URL absolue d’un article à partir du slug.
+ * Résout la base absolue du site public (liens e-mail).
  *
- * 1) But : éviter les liens relatifs cassés dans les boîtes mail.
+ * 1) But : garantir des URLs absolues dans les clients mail.
  * 2) Variables clés :
- *    - `window.__SITE_BASE_URL__` (optionnel) pour forcer le domaine final.
- *    - `window.location.origin` comme fallback quand l’admin est servi en HTTP(S).
- * 3) Flux : base explicite -> origine navigateur -> fallback relatif.
+ *    - `window.__SITE_BASE_URL__` : override manuel si l’admin est sur un autre domaine.
+ *    - fallback final : domaine public connu.
+ * 3) Flux : override explicite -> origin navigateur -> constante de secours.
+ *
+ * @returns {string}
+ */
+function resolveNewsletterSiteBaseUrl() {
+	const explicitBase =
+		typeof window !== 'undefined' && window.__SITE_BASE_URL__ != null
+			? String(window.__SITE_BASE_URL__).trim().replace(/\/$/, '')
+			: '';
+	if (explicitBase) {
+		return explicitBase;
+	}
+	if (typeof window !== 'undefined' && window.location.protocol !== 'file:' && window.location.origin) {
+		return String(window.location.origin).replace(/\/$/, '');
+	}
+	return 'https://www.damienverhee.fr';
+}
+
+/**
+ * Construit l’URL absolue d’un article à partir du slug.
  *
  * @param {string} slug
  * @returns {string}
@@ -521,17 +540,7 @@ function escapeHtmlText(s) {
 function buildNewsletterArticleUrl(slug) {
 	const cleanSlug = String(slug || '').trim();
 	const relative = `article.html?slug=${encodeURIComponent(cleanSlug)}`;
-	const explicitBase =
-		typeof window !== 'undefined' && window.__SITE_BASE_URL__ != null
-			? String(window.__SITE_BASE_URL__).trim().replace(/\/$/, '')
-			: '';
-	if (explicitBase) {
-		return `${explicitBase}/${relative}`;
-	}
-	if (typeof window !== 'undefined' && window.location.protocol !== 'file:' && window.location.origin) {
-		return `${window.location.origin.replace(/\/$/, '')}/${relative}`;
-	}
-	return relative;
+	return `${resolveNewsletterSiteBaseUrl()}/${relative}`;
 }
 
 /**
@@ -641,6 +650,7 @@ async function refreshNewsletterArticleList() {
 function buildNewsletterEmailHtml() {
 	const nq = ensureNewsletterQuill();
 	const intro = nq.root.innerHTML;
+	const siteBase = resolveNewsletterSiteBaseUrl();
 	const ul = document.getElementById('admin-newsletter-article-list');
 	const rows = ul ? Array.from(ul.querySelectorAll('li')) : [];
 	const blocks = [];
@@ -657,43 +667,181 @@ function buildNewsletterEmailHtml() {
 			continue;
 		}
 		const href = buildNewsletterArticleUrl(slug);
-		const thumbBlock = thumb
-			? `<td style="width:84px;vertical-align:top;padding-right:14px;">
-					<img src="${escapeHtmlText(thumb)}" alt="" width="70" height="70" style="display:block;width:70px;height:70px;border-radius:50%;object-fit:cover;border:0;" />
-				</td>`
-			: '';
+		const thumbUrl = thumb || `${siteBase}/images/portrait.webp`;
 		blocks.push(
-			`<tr>
-				<td style="padding:16px 0;border-bottom:1px solid #ececf2;">
-					<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-						<tr>
-							${thumbBlock}
-							<td style="vertical-align:top;">
-								<div style="font-size:18px;line-height:1.3;font-weight:700;color:#3e4450;">${escapeHtmlText(title)}</div>
-								${excerpt ? `<div style="margin-top:7px;font-size:14px;line-height:1.45;color:#626b78;">${escapeHtmlText(excerpt)}</div>` : ''}
-								<div style="margin-top:12px;">
-									<a href="${escapeHtmlText(href)}" style="display:inline-block;padding:9px 16px;border-radius:999px;background:#a969c7;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;">Lire</a>
-								</div>
-							</td>
-						</tr>
-					</table>
-				</td>
-			</tr>`,
+			`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #e8eaf0;${blocks.length > 0 ? ' margin-top:26px;' : ''}">
+				<tr>
+					<td class="article-image-cell" width="112" valign="top" style="width:112px; padding:0 22px 26px 0;">
+						<img class="article-img" src="${escapeHtmlText(thumbUrl)}" width="90" height="90" alt="Image de l’article" style="width:90px; height:90px; object-fit:cover; border-radius:999px;">
+					</td>
+					<td class="article-content-cell" valign="top" style="padding:0 0 26px 0;">
+						<h3 class="raleway" style="margin:0 0 8px 0; font-family:'Raleway', Arial, Helvetica, sans-serif; font-size:20px; line-height:28px; letter-spacing:1.4px; text-transform:uppercase; font-weight:700; color:#31394e;">
+							${escapeHtmlText(title)}
+						</h3>
+						${excerpt ? `<p class="raleway" style="margin:0 0 18px 0; font-family:'Raleway', Arial, Helvetica, sans-serif; font-size:14px; line-height:24px; color:#647087; font-weight:500;">${escapeHtmlText(excerpt)}</p>` : ''}
+						<a class="raleway" href="${escapeHtmlText(href)}" style="display:inline-block; padding:11px 20px; border-radius:999px; background:#a85fc8; font-family:'Raleway', Arial, Helvetica, sans-serif; font-size:12px; line-height:15px; letter-spacing:1.5px; text-transform:uppercase; color:#ffffff; font-weight:800; text-decoration:none;">Lire</a>
+					</td>
+				</tr>
+			</table>`,
 		);
 	}
-	return (
-		`<div style="margin:0;padding:0;background:#f5f4fa;">` +
-		`<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f5f4fa;padding:24px 0;">` +
-		`<tr><td align="center">` +
-		`<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="640" style="max-width:640px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;">` +
-		`<tr><td style="padding:28px 28px 20px;">${intro}</td></tr>` +
-		(blocks.length
-			? `<tr><td style="padding:0 28px 28px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${blocks.join('')}</table></td></tr>`
-			: '') +
-		`</table>` +
-		`</td></tr></table>` +
-		`</div>`
-	);
+	/**
+	 * 1) But : reprendre le gabarit premium fourni (hero + navigation + bloc intro + liste articles + footer).
+	 * 2) Variables clés :
+	 *    - `intro` : HTML Quill injecté dans la carte "Le mot de Damien".
+	 *    - `blocks` : sections articles cochés (miniature ronde / extrait / bouton Lire).
+	 *    - `siteBase` : racine absolue pour tous les liens.
+	 * 3) Flux : skeleton HTML e-mail -> injection intro -> injection boucle articles -> payload final Brevo.
+	 */
+	return `<!doctype html>
+<html lang="fr" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Newsletter Damien VERHÉE</title>
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { margin:0; padding:0; background:#51586f; }
+    table { border-collapse:collapse; }
+    img { border:0; outline:none; text-decoration:none; display:block; max-width:100%; }
+    a { color:inherit; }
+    .preview-hidden { display:none!important; visibility:hidden; opacity:0; color:transparent; height:0; width:0; overflow:hidden; mso-hide:all; }
+    .raleway { font-family:'Raleway', Arial, Helvetica, sans-serif!important; }
+    @media only screen and (max-width: 620px) {
+      .email-wrap { width:100%!important; }
+      .mobile-padding { padding-left:22px!important; padding-right:22px!important; }
+      .mobile-center { text-align:center!important; }
+      .mobile-full { width:100%!important; display:block!important; }
+      .article-image-cell { width:100%!important; display:block!important; padding:0 0 18px 0!important; }
+      .article-content-cell { width:100%!important; display:block!important; padding:0!important; }
+      .article-img { width:96px!important; height:96px!important; margin:0 auto!important; }
+      .hero-title { font-size:29px!important; line-height:36px!important; letter-spacing:4px!important; }
+      .hero-subtitle { font-size:13px!important; line-height:22px!important; }
+      .intro-card { padding:24px!important; }
+      .nav-pill { display:block!important; width:auto!important; margin:0 0 8px 0!important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background:#51586f; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
+  <div class="preview-hidden">Les dernières nouvelles, articles et rencontres autour de l’univers de Damien VERHÉE.</div>
+  <center role="article" aria-roledescription="email" lang="fr" style="width:100%; background:#51586f;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%; background:#51586f;">
+      <tr>
+        <td align="center" style="padding:34px 12px;">
+          <table role="presentation" class="email-wrap" width="680" cellpadding="0" cellspacing="0" style="width:680px; max-width:680px; background:#ffffff; border-radius:26px; overflow:hidden; box-shadow:0 18px 55px rgba(21,27,45,0.28);">
+            <tr>
+              <td style="padding:0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="40%" height="8" style="background:#4fa0a3; font-size:0; line-height:0;">&nbsp;</td>
+                    <td width="20%" height="8" style="background:#60b09c; font-size:0; line-height:0;">&nbsp;</td>
+                    <td width="10%" height="8" style="background:#e0be77; font-size:0; line-height:0;">&nbsp;</td>
+                    <td width="30%" height="8" style="background:#a85fc8; font-size:0; line-height:0;">&nbsp;</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td class="mobile-padding" style="padding:42px 48px 34px 48px; background:#ffffff;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td class="mobile-full mobile-center" valign="middle" style="padding:0 22px 0 0;">
+                      <div class="raleway" style="font-family:'Raleway', Arial, Helvetica, sans-serif; font-size:12px; line-height:18px; letter-spacing:2.5px; text-transform:uppercase; color:#a85fc8; font-weight:800;">Newsletter</div>
+                      <h1 class="hero-title raleway" style="margin:10px 0 10px 0; font-family:'Raleway', Arial, Helvetica, sans-serif; font-size:36px; line-height:43px; letter-spacing:6px; text-transform:uppercase; font-weight:700; color:#31394e;">Damien VERHÉE</h1>
+                      <div class="hero-subtitle raleway" style="font-family:'Raleway', Arial, Helvetica, sans-serif; font-size:14px; line-height:24px; letter-spacing:1.3px; text-transform:uppercase; color:#647087; font-weight:500;">Romans • Articles • Galerie • Evénements</div>
+                    </td>
+                    <td class="mobile-full" width="116" valign="middle" align="right" style="width:116px; padding:0;">
+                      <img src="${escapeHtmlText(`${siteBase}/images/portrait.webp`)}" width="104" height="104" alt="Portrait de Damien VERHÉE" style="width:104px; height:104px; object-fit:cover; border-radius:999px; border:6px solid #f3f0f7; box-shadow:0 8px 24px rgba(49,57,78,0.18);">
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td class="mobile-padding" style="padding:0 48px 34px 48px; background:#ffffff;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td align="center" style="padding:14px 16px; background:#f5f6fa; border-radius:18px;">
+                      <a class="nav-pill raleway" href="${escapeHtmlText(`${siteBase}/articles.html`)}" style="display:inline-block; margin:0 6px; padding:9px 14px; border-radius:999px; background:#60b09c; font-family:'Raleway', Arial, Helvetica, sans-serif; font-size:11px; line-height:14px; letter-spacing:1.5px; text-transform:uppercase; text-decoration:none; color:#ffffff; font-weight:800;">Articles</a>
+                      <a class="nav-pill raleway" href="${escapeHtmlText(`${siteBase}/galerie.html`)}" style="display:inline-block; margin:0 6px; padding:9px 14px; border-radius:999px; background:#e0be77; font-family:'Raleway', Arial, Helvetica, sans-serif; font-size:11px; line-height:14px; letter-spacing:1.5px; text-transform:uppercase; text-decoration:none; color:#ffffff; font-weight:800;">Galerie</a>
+                      <a class="nav-pill raleway" href="${escapeHtmlText(`${siteBase}/boutique.html`)}" style="display:inline-block; margin:0 6px; padding:9px 14px; border-radius:999px; background:#4fa0a3; font-family:'Raleway', Arial, Helvetica, sans-serif; font-size:11px; line-height:14px; letter-spacing:1.5px; text-transform:uppercase; text-decoration:none; color:#ffffff; font-weight:800;">Boutique</a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td class="mobile-padding" style="padding:0 48px 42px 48px; background:#ffffff;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td class="intro-card" style="padding:32px; background:#f9f7fb; border-radius:22px;">
+                      <div class="raleway" style="font-family:'Raleway', Arial, Helvetica, sans-serif; font-size:12px; line-height:18px; letter-spacing:2px; text-transform:uppercase; color:#a85fc8; font-weight:800; margin-bottom:14px;">Le mot de Damien</div>
+                      <div class="raleway" style="font-family:'Raleway', Arial, Helvetica, sans-serif; font-size:15px; line-height:27px; color:#525c73; font-weight:500;">
+                        ${intro}
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0; background:#ffffff;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td align="center" style="padding:22px 48px 18px 48px; background:#a85fc8;">
+                      <div class="raleway" style="font-family:'Raleway', Arial, Helvetica, sans-serif; font-size:12px; line-height:18px; letter-spacing:2.5px; text-transform:uppercase; color:#f7eaff; font-weight:800;">À lire sur le site</div>
+                      <h2 class="raleway" style="margin:5px 0 0 0; font-family:'Raleway', Arial, Helvetica, sans-serif; font-size:26px; line-height:32px; letter-spacing:3.5px; text-transform:uppercase; font-weight:700; color:#ffffff;">Articles sélectionnés</h2>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td class="mobile-padding" style="padding:34px 48px 18px 48px; background:#ffffff;">
+                ${blocks.length ? blocks.join('\n') : '<p class="raleway" style="margin:0 0 26px 0; font-family:\'Raleway\', Arial, Helvetica, sans-serif; font-size:14px; line-height:24px; color:#647087; font-weight:500;">Aucun article sélectionné pour cette newsletter.</p>'}
+              </td>
+            </tr>
+            <tr>
+              <td class="mobile-padding" style="padding:20px 48px 44px 48px; background:#ffffff;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f6fa; border-radius:22px; overflow:hidden;">
+                  <tr>
+                    <td style="padding:28px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td class="mobile-full mobile-center" valign="middle" style="padding:0 18px 0 0;">
+                            <div class="raleway" style="font-family:'Raleway', Arial, Helvetica, sans-serif; font-size:12px; line-height:18px; letter-spacing:2px; text-transform:uppercase; color:#e0a94e; font-weight:800;">Boutique</div>
+                            <p class="raleway" style="margin:6px 0 0 0; font-family:'Raleway', Arial, Helvetica, sans-serif; font-size:14px; line-height:24px; color:#525c73; font-weight:500;">Retrouvez mes livres disponibles à la vente.</p>
+                          </td>
+                          <td class="mobile-full mobile-center" valign="middle" align="right" style="padding:0;">
+                            <a class="raleway" href="${escapeHtmlText(`${siteBase}/boutique.html`)}" style="display:inline-block; min-width:145px; padding:12px 20px; border-radius:999px; background:#4fa0a3; font-family:'Raleway', Arial, Helvetica, sans-serif; font-size:12px; line-height:15px; letter-spacing:1.5px; text-transform:uppercase; color:#ffffff; font-weight:800; text-decoration:none; text-align:center;">Voir la boutique</a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" class="mobile-padding" style="padding:34px 48px 38px 48px; background:#31394e;">
+                <div class="raleway" style="font-family:'Raleway', Arial, Helvetica, sans-serif; font-size:22px; line-height:30px; letter-spacing:4px; text-transform:uppercase; color:#ffffff; font-weight:700; margin-bottom:8px;">Damien VERHÉE</div>
+                <div class="raleway" style="font-family:'Raleway', Arial, Helvetica, sans-serif; font-size:13px; line-height:22px; color:#c7ccd8; font-weight:500;">
+                  <a href="${escapeHtmlText(`${siteBase}/`)}" style="color:#ffffff; text-decoration:underline;">www.damienverhee.fr</a>
+                </div>
+                <div class="raleway" style="font-family:'Raleway', Arial, Helvetica, sans-serif; font-size:11px; line-height:18px; color:#9fa6b9; margin-top:22px; font-weight:500;">
+                  Vous recevez cet e-mail car vous êtes inscrit à la newsletter Damien VERHÉE.<br>
+                  <a href="{{ unsubscribe }}" style="color:#c7ccd8; text-decoration:underline;">Se désabonner</a>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </center>
+</body>
+</html>`;
 }
 
 // ——— Onglets admin (boutons dans .dv-admin__masthead-tabs) ———
