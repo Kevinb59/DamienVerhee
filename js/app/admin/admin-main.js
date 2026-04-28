@@ -1716,6 +1716,46 @@ function eurosToCents(str) {
 }
 
 /**
+ * Convertit une note libre (ex: "4,2") en nombre borné entre 0 et 5.
+ *
+ * 1) But : accepter saisie FR avec virgule dans l'admin.
+ * 2) Variables clés : `raw` texte utilisateur, `n` note numérique normalisée.
+ * 3) Flux : trim -> parse float -> garde-fous [0..5] -> null si vide/invalide.
+ *
+ * @param {string} raw
+ * @returns {number|null}
+ */
+function parseRatingValue(raw) {
+	const s = String(raw || '').trim();
+	if (!s) {
+		return null;
+	}
+	const n = Number.parseFloat(s.replace(',', '.'));
+	if (!Number.isFinite(n)) {
+		return null;
+	}
+	return Math.max(0, Math.min(5, Math.round(n * 10) / 10));
+}
+
+/**
+ * Convertit un nombre d'avis en entier positif (ou null si vide/invalide).
+ *
+ * @param {string} raw
+ * @returns {number|null}
+ */
+function parseReviewsCount(raw) {
+	const s = String(raw || '').trim();
+	if (!s) {
+		return null;
+	}
+	const n = Number.parseInt(s, 10);
+	if (!Number.isFinite(n) || n < 0) {
+		return null;
+	}
+	return n;
+}
+
+/**
  * Vérifie l’intégrité minimale d’un produit avant sauvegarde.
  *
  * 1) But : éviter l’enregistrement de fiches incomplètes.
@@ -1724,7 +1764,17 @@ function eurosToCents(str) {
  *    - promo : active la validation de l’ancien prix.
  * 3) Flux : accumulation des erreurs -> retour de la liste au submitter.
  *
- * @param {{ title: string, imageUrl: string, priceCents: number, promo: boolean, priceBeforePromoCents: number|null, sumupUrl: string }} payload
+ * @param {{
+ *  title: string,
+ *  imageUrl: string,
+ *  priceCents: number,
+ *  promo: boolean,
+ *  priceBeforePromoCents: number|null,
+ *  sumupUrl: string,
+ *  ratingValue: number|null,
+ *  reviewsCount: number|null,
+ *  reviewsUrl: string
+ * }} payload
  * @returns {string[]}
  */
 function validateProductPayload(payload) {
@@ -1757,6 +1807,34 @@ function validateProductPayload(payload) {
 			errors.push('Le lien d’achat ne semble pas correct.');
 		}
 	}
+	/**
+	 * 1) But : fiabiliser l'affichage "⭐ note/5 — x avis" sur la boutique.
+	 * 2) Variables clés : trio rating/reviewsCount/reviewsUrl.
+	 * 3) Flux : si un des 3 champs est renseigné, le trio complet devient obligatoire.
+	 */
+	const hasAnyReviewMeta =
+		payload.ratingValue != null || payload.reviewsCount != null || !!payload.reviewsUrl;
+	if (hasAnyReviewMeta) {
+		if (payload.ratingValue == null) {
+			errors.push('Renseignez une note (/5) ou videz aussi les autres champs avis.');
+		}
+		if (payload.reviewsCount == null) {
+			errors.push("Renseignez le nombre d'avis ou videz aussi les autres champs avis.");
+		}
+		if (!payload.reviewsUrl) {
+			errors.push('Ajoutez le lien critiques (Babelio) ou videz aussi les autres champs avis.');
+		}
+	}
+	if (payload.reviewsUrl) {
+		try {
+			const parsed = new URL(payload.reviewsUrl);
+			if (!/^https?:$/i.test(parsed.protocol)) {
+				errors.push('Le lien critiques doit commencer par http:// ou https://');
+			}
+		} catch {
+			errors.push('Le lien critiques ne semble pas correct.');
+		}
+	}
 	return errors;
 }
 
@@ -1775,7 +1853,30 @@ function syncProductImageSourceMode() {
 	}
 }
 
+/**
+ * Active/désactive le champ "Ancien prix" selon la case "En promotion".
+ *
+ * 1) But : empêcher la saisie d’un ancien prix quand la promo est inactive.
+ * 2) Variables clés :
+ *    - `promoInput` : checkbox d’activation promo.
+ *    - `oldPriceInput` : champ ancien prix.
+ * 3) Flux : promo cochée -> champ actif ; décochée -> champ désactivé + valeur vidée.
+ */
+function syncProductPromoFields() {
+	const promoInput = document.getElementById('prod-promo');
+	const oldPriceInput = document.getElementById('prod-oldprice');
+	if (!(oldPriceInput instanceof HTMLInputElement)) {
+		return;
+	}
+	const isPromo = !!promoInput?.checked;
+	oldPriceInput.disabled = !isPromo;
+	if (!isPromo) {
+		oldPriceInput.value = '';
+	}
+}
+
 document.getElementById('prod-image-mode')?.addEventListener('change', syncProductImageSourceMode);
+document.getElementById('prod-promo')?.addEventListener('change', syncProductPromoFields);
 
 document.getElementById('admin-product-list')?.addEventListener('click', async (e) => {
 	const edit = e.target.closest('[data-edit-product]');
@@ -1799,8 +1900,14 @@ document.getElementById('admin-product-list')?.addEventListener('click', async (
 		document.getElementById('prod-oldprice').value =
 			p.priceBeforePromoCents != null ? (p.priceBeforePromoCents / 100).toFixed(2) : '';
 		document.getElementById('prod-sumup').value = p.sumupUrl;
+		document.getElementById('prod-rating').value =
+			p.ratingValue != null ? String(p.ratingValue).replace('.', ',') : '';
+		document.getElementById('prod-reviews-count').value =
+			p.reviewsCount != null ? String(p.reviewsCount) : '';
+		document.getElementById('prod-reviews-url').value = p.reviewsUrl || '';
 		document.getElementById('prod-published').checked = !!p.published;
 		syncProductImageSourceMode();
+		syncProductPromoFields();
 		updateProductSaveButtonLabel();
 		return;
 	}
@@ -1829,8 +1936,12 @@ document.getElementById('btn-new-product')?.addEventListener('click', () => {
 	document.getElementById('prod-promo').checked = false;
 	document.getElementById('prod-oldprice').value = '';
 	document.getElementById('prod-sumup').value = '';
+	document.getElementById('prod-rating').value = '';
+	document.getElementById('prod-reviews-count').value = '';
+	document.getElementById('prod-reviews-url').value = '';
 	document.getElementById('prod-published').checked = true;
 	syncProductImageSourceMode();
+	syncProductPromoFields();
 	updateProductSaveButtonLabel();
 });
 
@@ -1855,6 +1966,9 @@ document.getElementById('btn-save-product')?.addEventListener('click', async () 
 			promo,
 			priceBeforePromoCents: promo ? eurosToCents(document.getElementById('prod-oldprice').value) : null,
 			sumupUrl: document.getElementById('prod-sumup').value.trim() || '#',
+			ratingValue: parseRatingValue(document.getElementById('prod-rating').value),
+			reviewsCount: parseReviewsCount(document.getElementById('prod-reviews-count').value),
+			reviewsUrl: document.getElementById('prod-reviews-url').value.trim(),
 			published: document.getElementById('prod-published').checked,
 			currency: 'EUR',
 		};
@@ -1990,6 +2104,7 @@ updateArticleSaveButtonLabel();
 syncEventFieldsVisibility();
 syncGallerySourceMode();
 syncProductImageSourceMode();
+syncProductPromoFields();
 updateProductSaveButtonLabel();
 renderLastPublishStatus().catch(() => {
 	/* no-op: fallback "jamais" deja geré */

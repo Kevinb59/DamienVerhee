@@ -440,7 +440,7 @@
                           placeholder="Titre du livre"
                         />
                       </div>
-                      <div class="dv-admin__grid-2">
+                      <div class="dv-admin__grid-products-meta">
                         <div class="dv-admin__field dv-admin__field--image-source">
                           <label for="prod-image-mode">Source couverture</label>
                           <select id="prod-image-mode">
@@ -466,6 +466,30 @@
                             type="file"
                             id="prod-image-file"
                             accept="image/*,video/*"
+                          />
+                        </div>
+                        <div class="dv-admin__field">
+                          <label for="prod-rating">Note (/5)</label>
+                          <input
+                            type="text"
+                            id="prod-rating"
+                            placeholder="4,2"
+                          />
+                        </div>
+                        <div class="dv-admin__field">
+                          <label for="prod-reviews-count">Nombre d'avis</label>
+                          <input
+                            type="text"
+                            id="prod-reviews-count"
+                            placeholder="18"
+                          />
+                        </div>
+                        <div class="dv-admin__field">
+                          <label for="prod-reviews-url">Lien critiques (Babelio)</label>
+                          <input
+                            type="url"
+                            id="prod-reviews-url"
+                            placeholder="https://www.babelio.com/..."
                           />
                         </div>
                       </div>
@@ -494,6 +518,7 @@
                             type="text"
                             id="prod-oldprice"
                             placeholder="24,90"
+                            disabled
                           />
                         </div>
                       </div>

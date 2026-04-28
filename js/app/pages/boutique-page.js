@@ -12,6 +12,20 @@ function esc(s) {
 }
 
 /**
+ * Formate la note pour affichage FR (virgule décimale) avec 1 décimale max.
+ *
+ * @param {number|null|undefined} value
+ * @returns {string}
+ */
+function formatRating(value) {
+  if (!Number.isFinite(Number(value))) {
+    return ''
+  }
+  const normalized = Math.max(0, Math.min(5, Number(value)))
+  return normalized.toFixed(1).replace('.', ',')
+}
+
+/**
  * Branche le clic sur les boutons Voir plus / Réduire (délégation sur la grille).
  * logique : bascule classe is-expanded + clamp sur le paragraphe ; aria pour l’accessibilité.
  *
@@ -92,6 +106,26 @@ async function render() {
       // Bloc résumé : paragraphe avec line-clamp + bouton icône (thème Font Awesome du site)
       const synopsisText = esc(p.synopsis || '')
       const optimizedImageUrl = optimizeCloudinaryImage(p.imageUrl, CLOUDINARY_PRESETS.productCover)
+      /**
+       * 1) But : afficher les métadonnées Babelio sous le CTA Acheter quand elles existent.
+       * 2) Variables clés :
+       *    - `ratingValue` : note /5.
+       *    - `reviewsCount` : nombre d'avis.
+       *    - `reviewsUrl` : lien public des critiques.
+       * 3) Flux : trio complet présent -> rendu ligne + lien ; sinon bloc omis.
+       */
+      const ratingValue = formatRating(p.ratingValue)
+      const reviewsCount = Number.isFinite(Number(p.reviewsCount)) ? Number(p.reviewsCount) : null
+      const reviewsUrl = String(p.reviewsUrl || '').trim()
+      const hasReviewsMeta = !!ratingValue && reviewsCount != null && !!reviewsUrl
+      const reviewsHtml = hasReviewsMeta
+        ? `
+            <div class="dv-product-card__reviews">
+              <p class="dv-product-card__reviews-line">⭐ ${esc(ratingValue)}/5 sur Babelio — ${esc(String(reviewsCount))} avis</p>
+              <a class="dv-product-card__reviews-link" href=${JSON.stringify(reviewsUrl)} target="_blank" rel="noopener noreferrer">Voir les avis sur Babelio</a>
+            </div>
+          `
+        : ''
       card.innerHTML = `
 				${optimizedImageUrl ? `<img class="dv-product-card__img" src="${esc(optimizedImageUrl)}" alt="" loading="lazy" decoding="async" />` : ''}
 				<div class="dv-product-card__body">
@@ -110,6 +144,7 @@ async function render() {
 					<ul class="actions special" style="margin-top:1rem;">
 						<li><a href=${JSON.stringify(p.sumupUrl && String(p.sumupUrl).trim() ? p.sumupUrl : '#')} class="button primary" target="_blank" rel="noopener noreferrer">Acheter</a></li>
 					</ul>
+          ${reviewsHtml}
 				</div>
 			`
       grid.appendChild(card)

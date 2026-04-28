@@ -511,6 +511,25 @@ html {
   font-weight: 400;
 }
 
+/* Avis Babelio sous le CTA Acheter : lecture rapide note + accès aux critiques. */
+.dv-product-card__reviews {
+  margin-top: 0.75rem;
+}
+
+.dv-product-card__reviews-line {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.dv-product-card__reviews-link {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-size: 0.88rem;
+  text-decoration: underline;
+}
+
 /* ——— Accueil : 3 derniers articles (miniature ronde + accroche une ligne) ——— */
 .dv-index-recent.features .dv-index-recent__link {
   display: block;
@@ -2300,6 +2319,13 @@ html {
   gap: 0 1rem;
 }
 
+/* Boutique admin : ligne compacte source + média + note/avis/lien critiques. */
+.dv-admin__grid-products-meta {
+  display: grid;
+  grid-template-columns: 11rem minmax(12rem, 1fr) 7.5rem 9rem minmax(14rem, 1fr);
+  gap: 0 1rem;
+}
+
 /* Événement : 4 champs sur une ligne (date/heure début + date/heure fin). */
 .dv-admin__grid-4 {
   display: grid;
@@ -2312,6 +2338,10 @@ html {
     grid-template-columns: 1fr;
   }
 
+  .dv-admin__grid-products-meta {
+    grid-template-columns: 1fr;
+  }
+
   .dv-admin__grid-4 {
     grid-template-columns: 1fr;
   }
@@ -2320,6 +2350,10 @@ html {
 @media screen and (max-width: 1200px) and (min-width: 737px) {
   .dv-admin__grid-4 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dv-admin__grid-products-meta {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

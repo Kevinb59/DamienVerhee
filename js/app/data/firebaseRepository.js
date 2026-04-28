@@ -474,6 +474,23 @@ export async function saveProduct(product) {
 				? Number(payload.priceBeforePromoCents)
 				: null
 			: null;
+		/**
+		 * 1) But : stocker proprement les métadonnées d'avis (Babelio) pour la boutique.
+		 * 2) Variables clés :
+		 *    - ratingValue : note sur 5 (décimal possible, ex 4.2).
+		 *    - reviewsCount : volume d'avis.
+		 *    - reviewsUrl : page de critiques.
+		 * 3) Flux : normalisation numérique/string avant écriture Firestore.
+		 */
+		payload.ratingValue =
+			payload.ratingValue != null && Number.isFinite(Number(payload.ratingValue))
+				? Number(payload.ratingValue)
+				: null;
+		payload.reviewsCount =
+			payload.reviewsCount != null && Number.isFinite(Number(payload.reviewsCount))
+				? Number(payload.reviewsCount)
+				: null;
+		payload.reviewsUrl = String(payload.reviewsUrl || '').trim();
 		delete payload.id;
 		await fsApi.setDoc(ref, payload);
 		return { id: product.id, ...payload };
@@ -489,6 +506,15 @@ export async function saveProduct(product) {
 		promo: !!product.promo,
 		priceBeforePromoCents: product.promo ? Number(product.priceBeforePromoCents) || null : null,
 		sumupUrl: product.sumupUrl || '#',
+		ratingValue:
+			product.ratingValue != null && Number.isFinite(Number(product.ratingValue))
+				? Number(product.ratingValue)
+				: null,
+		reviewsCount:
+			product.reviewsCount != null && Number.isFinite(Number(product.reviewsCount))
+				? Number(product.reviewsCount)
+				: null,
+		reviewsUrl: String(product.reviewsUrl || '').trim(),
 		published: product.published !== false,
 		sortOrder: maxOrder + 1,
 	};
