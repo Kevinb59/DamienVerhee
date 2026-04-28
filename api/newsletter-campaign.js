@@ -167,7 +167,7 @@ module.exports = async function handler(req, res) {
 
 	const apiKey = asText(process.env.BREVO_API_KEY)
 	const senderEmail = asText(process.env.BREVO_SENDER_EMAIL)
-	const senderName = asText(process.env.BREVO_SENDER_NAME || 'Damien Verhee')
+	const senderName = asText(process.env.BREVO_SENDER_NAME || 'Damien Verhée')
 	const listId = Number.parseInt(asText(process.env.BREVO_NEWSLETTER_LIST_ID), 10)
 	const managerEmail = asText(process.env.BREVO_NEWSLETTER_MANAGER_EMAIL)
 	if (!apiKey || !senderEmail) {

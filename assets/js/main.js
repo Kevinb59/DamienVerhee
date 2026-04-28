@@ -1,5 +1,5 @@
 /*
-	Damien VERHEE — Site auteur
+	Damien VERHÉE — Site auteur
 */
 
 var settings = {
